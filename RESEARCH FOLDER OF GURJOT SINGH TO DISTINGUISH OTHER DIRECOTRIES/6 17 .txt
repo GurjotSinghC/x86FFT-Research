@@ -1,0 +1,90 @@
+same position
+
+full double sided spectrum postiive  
+
+if we were  to change this iterator
+
+celiling later verison of mips  oppcode is e 
+
+fucniton code is e
+
+at fucntin code e fuction code e shoudl say ceil
+roudn trunc ceila dn floor
+
+appendix b actual  R4000 R6000
+
+sqrt not aviablef or 2000 
+
+got opcode for it 
+
+ipmlemnet it
+absolute value move engative
+
+
+than four blank opcdoes in fact all 8 fo those  including round trunc ceil adn floor aare actualylimplmented as hyperosnic arcsinhyperoslb
+
+
+ 
+ atan2 is used for full cicrlce rsudl,
+ 
+ thats how arg works it uses atan2
+ implmenets it in c++ all these funcitns buitl all using uisng x86 
+ in the end oding the instruciton n the operands
+ 
+ 
+ doing iti n high level language
+ i qt use assembly lagnuage 
+ 
+ n is data poitns
+ 
+ 
+ makign a complex unit struture calle dcomplex
+ 
+ oeratrs thata re complex .mul
+ 
+ 
+ MIGHT AS WELL HAVE DIVISION
+
+ Instead of an internal conversion do a print complex subrotuine
+ 
+ pringitng complex just means using the syscall double twice dropping a j after the second number
+ or putting the j in frot hte second uumber
+ 
+ printign a phasor do we evn have anytrthign that reprecent
+ 
+ 
+ // From http://rosettacode.org/wiki/Fast_Fourier_transform
+
+// Cooley-Tukey FFT (in-place, breadth-first, decimation-in-frequency)
+// Better optimized but less intuitive
+// !!! Warning : in some cases this code make result different from not optimased version above (need to fix bug)
+// The bug is now fixed @2017/05/30 
+void fft(CArray &x)
+{
+    // DFT
+    unsigned int N = x.size(), k = N, n;
+    double thetaT = 3.14159265358979323846264338328L / N;
+    Complex phiT = Complex(cos(thetaT), -sin(thetaT)), T;
+    while (k > 1)
+    {
+        n = k;
+        k >>= 1;
+        phiT = phiT * phiT;
+        T = 1.0L;
+        for (unsigned int l = 0; l < k; l++)
+        {
+            for (unsigned int a = l; a < N; a += n)
+            {
+                unsigned int b = a + k;
+                Complex t = x[a] - x[b];
+                x[a] += x[b];
+                x[b] = t * T;
+            }
+            T *= phiT;
+        }
+    }
+ 
+ This doesnt  inlined 
+because it would be better if they passed m and let N 1 shift M
+
+integer protion with trucnation 
