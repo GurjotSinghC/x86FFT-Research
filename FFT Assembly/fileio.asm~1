@@ -1,0 +1,201 @@
+	.data
+
+pointer:	.double	0
+
+onevalbuffer:	.space	30
+_O_RDWR: 	= 0x0000
+_O_TEXT: 	= 0x4000
+	
+readerrorhandelign:	.asciiz	"You failed to read the file somehow"
+	
+filehandle:	.word	0
+		.data
+file:		.struct	
+readhead:	.word	0
+	.data
+file.name:	.asciiz	"Data.txt"
+	
+file.output:	.asciiz	"output.txt"
+	.align	8
+	.code
+file.readfile:
+
+	addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+	sw	$fp,fp.fp-fp.s4($sp)
+	add	$fp,$sp,fp.fp-fp.s4
+	sw	$ra,fp.ra($fp)
+	sw	$s0,fp.s0($fp)
+	sw	$s1,fp.s1($fp)
+	sw	$s2,fp.s2($fp)
+	sw	$s3,fp.s3($fp)
+	sw	$s4,fp.s4($fp)
+	sw	$a0,fp.a0($fp)
+	sw	$a1,fp.a1($fp)
+	sw	$a2,fp.a2($fp)
+	sw	$a3,fp.a3($fp)
+	
+	
+	la	$a0,file.name
+	addi	$a1,_O_RDWR|_O_TEXT
+	syscall	$open
+	sw	$v0,filehandle
+	mov	$a0,$v0
+	li	$a1,0
+	li	$a2,0
+	syscall	$position
+# 	addi	$sp,-4
+# # 	sw	$a0,($sp)
+	
+	la	$a1,m
+	li	$a2,1
+	syscall	$read
+	
+	mov	$a0,$a1
+	syscall	$string2double
+	cvt.w.d	$f0,$f0
+	mfc1	$t0,$f0
+	sw	$t0,m
+
+	lw	$a0,m
+	syscall	$print_int
+
+	lw	$t0,m
+	li	$t1,1
+	li	$t2,2
+1:	beqz	$t0,finishpow2
+	addi	$t0,-1
+	mul	$t1,$t1,$t2
+	j	1b
+	
+finishpow2:	sw	$t1,N
+		mtc1	$t1,$f0
+		cvt.d.w	$f0,$f0
+		s.d	$f0,Nfloat
+
+		li	$a2,1
+		lw	$a0,filehandle
+		li	$a1,2
+		syscall	$position
+	#Going to start reading the elements rom the file.
+		lw	$t1,N	#loop counter only doing this 16 times
+# 		addi	$t1,1
+		la	$t8,Data
+		lw	$a0,($sp)
+		li	$t4,'\n
+	
+		la	$a1,onevalbuffer
+
+1:		bltz	$t1,DoneReading
+		
+		
+		li	$a2,1	#number bytes im reading each time
+		lw	$a0,filehandle
+		syscall	$read
+# 		blez	$v0,DoneReading		
+		
+		bltz	$v0,ERRORMAYBE
+# 		lb	$t3,($v0)
+		lb	$a0,($a1)
+		syscall	$print_char
+		
+# 		li	$a0,'\n
+# 		syscall	$print_char
+		beq	$t4,$a0,convert_storeDataFFT		#found end of line character
+		addi	$a1,1
+		j	1b
+
+convert_storeDataFFT:	la	$a0,onevalbuffer
+			li	$s5,'\0
+			sb	$s5,-1($a1)
+			addi	$t1,-1
+			syscall	$string2double
+			s.d	$f0,($t8)
+			addi	$t8,16
+			la	$a1,onevalbuffer
+
+
+
+			j	1b
+
+
+
+
+
+
+
+
+ERRORMAYBE:	
+		la	$a0,readerrorhandelign
+		syscall	$print_string
+		
+DoneReading:		lw	$a0,filehandle
+			mov	$s0,$a0
+			
+			syscall	$close
+98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+	lw	$s0,fp.s0($fp)
+	lw	$s1,fp.s1($fp)
+	lw	$s2,fp.s2($fp)
+	lw	$s3,fp.s3($fp)
+	lw	$s4,fp.s4($fp)
+	lw	$fp,fp.fp($fp)
+	add	$sp,$sp,fp.a4-fp.s4
+	jr	$ra
+
+
+# have to loook at magnitude of it first off sign is completley indpdent
+# the have to mulitply it by powers of two  if the number is bigger than 
+file.writeData:
+	addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+	sw	$fp,fp.fp-fp.s4($sp)
+	add	$fp,$sp,fp.fp-fp.s4
+	sw	$ra,fp.ra($fp)
+	sw	$s0,fp.s0($fp)
+	sw	$s1,fp.s1($fp)
+	sw	$s2,fp.s2($fp)
+	sw	$s3,fp.s3($fp)
+	sw	$s4,fp.s4($fp)
+	sw	$a0,fp.a0($fp)
+	sw	$a1,fp.a1($fp)
+	sw	$a2,fp.a2($fp)
+	sw	$a3,fp.a3($fp)
+
+
+	li	$a0,32
+	syscall	$malloc
+	mov	$a3,$v0
+	lw	$t1,N
+	la	$t0,Data
+
+	la	$a0,file.output
+	addi	$a1,_O_RDWR|_O_TEXT
+	syscall	$open
+	mov	$a0,$v0	#file handle
+	
+	li	$a2,1
+	la	$a1,m
+	syscall	$write
+
+
+	
+	
+	# also create write data with phasor notaiton 
+
+end:
+
+
+98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+	lw	$s0,fp.s0($fp)
+	lw	$s1,fp.s1($fp)
+	lw	$s2,fp.s2($fp)
+	lw	$s3,fp.s3($fp)
+	lw	$s4,fp.s4($fp)
+	lw	$fp,fp.fp($fp)
+	add	$sp,$sp,fp.a4-fp.s4
+	jr	$ra
+
+	
+
+# 	.data
+# 
+# comparisontable:	.double	1.0e-100,1.0e-10,1.0e-1,1.0,10.0,1.0e10,1.0e100
