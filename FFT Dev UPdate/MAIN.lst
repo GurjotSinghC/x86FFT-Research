@@ -1,0 +1,1892 @@
+    1                   	
+    2                   
+    3                   
+    4                   	
+    5 				.data
+    6                   	
+    7 10010000 3d2a2054	TtT:	.asciiz	"T *= phit"
+    8 1001000a 20202020	SPACE:	.asciiz	"             "
+    9                   
+   10                   
+   11 10010018 40f86a00	Rounding_Factor:	.double	100000	#number of zeroes increases your digits of accuracy
+   12 10010020 3d719799	NormalizationRange:	.double	1e-12
+   13                   
+   14 10010028 75736552	complexmulprint:	.asciiz	"Result of complex multiplication"
+   15                   
+   16                   	#Debug Strings I use this to prefix values I need to view in console
+   17 10010049 73696854	realprint:		.asciiz	"This is the Real component "
+   18 10010065 67616d69	imagprint:		.asciiz	"imaginary component  "
+   19                   
+   20 1001007b 53206557	firstphit:		.asciiz	"We Set the First PhIT cos and sin  "
+   21 1001009f 73696854	firstph2:		.asciiz	"This is the real and imagine of phit^2:  "
+   22                   
+   23                   
+   24                   
+   25 100100c9 75736552	compadd:		.asciiz	"Result of a complex addition     "
+   26 100100eb 75736552	compsub:		.asciiz "Result of a complex subtraction  "
+   27 1001010d 5d625b78	tandt:			.asciiz	"x[b] = t * T = "
+   28 1001011d 3d2a2054	nextphit:	.asciiz	"T *= phiT  "
+   29                   
+   30                   
+   31                   
+   32 1001012c 00000000	Data:		.word	0
+   33                   
+   34                   	
+   35 10010130 754f2020	ButterFlyDebug:	.asciiz	"  Output FFT DATA    "
+   36                   		
+   37                   
+   38                   
+   39 10010148 400921fb	PI:	.double	3.1415926535897931
+   40                   # use atan 1 compe up with pi 
+   41 10010150 3ff00000	T:	.double	1
+   42 10010158 00000000		.double	0
+   43                   
+   44                   #i need to read file to get number of values which is 2^(first read byte of file)
+   45                   #I need to sw into N and than convert into a float and store that in Nfloat
+   46                   
+   47                   
+   48 10010160 40300000	Nfloat:	.double	16
+   49 10010168 00000010	N:	.word	16
+   50                   
+   51                   
+   52 10010170 00000000	ThetaT:	.double	0
+   53 10010178 00000000	phiT:	.double	0
+   54 10010180 00000000		.double	0
+   55 10010188 00000000	Datapointer:	.word	0
+   56 10010190 00000000	t:	.double	0,0
+   57 100101a0 00000004	m:	.word	4
+   58                   
+   59 100101a8 3d819799	roundingfacttor:	.double	2e-12
+   60                   
+   61                   
+   62                   
+   63                   	
+   64 				.include	"funoffsets.asm"
+    1 				.data
+    2          0000001c	fp:	.struct	-36
+    3          ffffffdc	loc:	.word	0
+    4          ffffffe0	s7:	.word	0
+    5          ffffffe4	s6:	.word	0
+    6          ffffffe8	s5:	.word	0
+    7          ffffffec	s4:	.word	0
+    8          fffffff0	s3:	.word	0
+    9          fffffff4	s2:	.word	0
+   10          fffffff8	s1:	.word	0
+   11          fffffffc	s0:	.word	0
+   12          00000000	fp:	.word	0
+   13          00000004	ra:	.word	0
+   14          00000008	a0:	.word	0
+   15          0000000c	a1:	.word	0
+   16          00000010	a2:	.word	0
+   17          00000014	a3:	.word	0
+   18          00000018	a4:	.word	0
+   19                   	
+   20 				.code
+   21                   # example of function preamble and postamble for a stack frame 
+   22                   # note that the stacksize calculations use the topmost thing you're going to 
+   23                   # push on the stack. (this supposes the use of a0-a3 and s0-s4)
+   24 00400000 23bdffd4	myfunc:	addi	$sp,$sp,fp.s4-fp.a4
+   25 00400004 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+   26 00400008 23be0014		add	$fp,$sp,fp.fp-fp.s4
+   27 0040000c afdf0004		sw	$ra,fp.ra($fp)
+   28 00400010 afd0fffc		sw	$s0,fp.s0($fp)
+   29 00400014 afd1fff8		sw	$s1,fp.s1($fp)
+   30 00400018 afd2fff4		sw	$s2,fp.s2($fp)
+   31 0040001c afd3fff0		sw	$s3,fp.s3($fp)
+   32 00400020 afd4ffec		sw	$s4,fp.s4($fp)
+   33 00400024 afc40008		sw	$a0,fp.a0($fp)
+   34 00400028 afc5000c		sw	$a1,fp.a1($fp)
+   35 0040002c afc60010		sw	$a2,fp.a2($fp)
+   36 00400030 afc70014		sw	$a3,fp.a3($fp)
+   37                   
+   38 00400034 8fdf0004	98:	lw	$ra,fp.ra($fp)
+   39 00400038 8fd0fffc		lw	$s0,fp.s0($fp)
+   40 0040003c 8fd1fff8		lw	$s1,fp.s1($fp)
+   41 00400040 8fd2fff4		lw	$s2,fp.s2($fp)
+   42 00400044 8fd3fff0		lw	$s3,fp.s3($fp)
+   43 00400048 8fd4ffec		lw	$s4,fp.s4($fp)
+   44 0040004c 8fde0000		lw	$fp,fp.fp($fp)
+   45 00400050 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+   46 00400054 03e00008		jr	$ra
+   65                   
+   66 				.include	"comp2str.asm"
+    1                   #format a string into double into and outputinto a file
+    2                   
+    3                   #Please NOTE this will clear the screen
+    4                   Complex2String:	#	void Double_To_String (double Input:f12,f14, char * Buffer:a3)
+    5 100101b0 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+    6 100101b4 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+    7 100101b8 23be0014		add	$fp,$sp,fp.fp-fp.s4
+    8 100101bc afdf0004		sw	$ra,fp.ra($fp)
+    9 100101c0 afd0fffc		sw	$s0,fp.s0($fp)
+   10 100101c4 afd1fff8		sw	$s1,fp.s1($fp)
+   11 100101c8 afd2fff4		sw	$s2,fp.s2($fp)
+   12 100101cc afd3fff0		sw	$s3,fp.s3($fp)
+   13 100101d0 afd4ffec		sw	$s4,fp.s4($fp)
+   14 100101d4 afc40008		sw	$a0,fp.a0($fp)
+   15 100101d8 afc5000c		sw	$a1,fp.a1($fp)
+   16 100101dc afc60010		sw	$a2,fp.a2($fp)
+   17 100101e0 afc70014		sw	$a3,fp.a3($fp)
+   18                   
+   19 				li	$a0,'\f
+   19 100101e4 3404000c		ori	$a0,$0,0x0C
+   20 100101e8 000002cc		syscall	$print_char
+   21                   
+   22 100101ec 000000cc		syscall	$print_double
+   23 100101f0 44047800		mfc1	$a0,$f15
+   24 100101f4 04800002		bltz	$a0,2f
+   25 100101f8 2004002b		addi	$a0,$0,'+
+   26 100101fc 000002cc		syscall	$print_char
+   27 10010200 46207306	2:	mov.d	$f12,$f14
+   28 10010204 000000cc		syscall	$print_double
+   29                   	
+   30 				li	$a0,'j
+   30 10010208 3404006a		ori	$a0,$0,0x6A
+   31 1001020c 000002cc		syscall	$print_char
+   32                   
+   33 10010210 00002021		mov	$a0,$0
+   34 10010214 00002821		mov	$a1,$0		
+   35 10010218 0000050c	3:	syscall	$xy
+   36                   	
+   37 1001021c 20840001		addi	$a0,$a0,1
+   38 10010220 a0e20000		sb	$v0,($a3)
+   39 10010224 20e70001		addi	$a3,$a3,1
+   40 				bne	$v0,' ,3b
+   40 				li	$at,' 
+   40 10010228 34010020		ori	$at,$0,0x20
+   40 1001022c 1441fffa		bne	$v0,$at,3b
+   41 				li	$t0,'\n
+   41 10010230 3408000a		ori	$t0,$0,0x0A
+   42 10010234 a0e8ffff		sb	$t0,-1($a3)
+   43 10010238 00801021		mov	$v0,$a0
+   44 1001023c 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+   45 10010240 8fd0fffc		lw	$s0,fp.s0($fp)
+   46 10010244 8fd1fff8		lw	$s1,fp.s1($fp)
+   47 10010248 8fd2fff4		lw	$s2,fp.s2($fp)
+   48 1001024c 8fd3fff0		lw	$s3,fp.s3($fp)
+   49 10010250 8fd4ffec		lw	$s4,fp.s4($fp)
+   50 10010254 8fde0000		lw	$fp,fp.fp($fp)
+   51 10010258 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+   52 1001025c 03e00008		jr	$ra
+   67                   
+   68                   
+   69 				.code
+   70 				.include	"printdata.asm"
+    1 				.code
+    2                   printalldata:
+    3 00400058 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+    4 0040005c afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+    5 00400060 23be0014		add	$fp,$sp,fp.fp-fp.s4
+    6 00400064 afdf0004		sw	$ra,fp.ra($fp)
+    7 00400068 afd0fffc		sw	$s0,fp.s0($fp)
+    8 0040006c afd1fff8		sw	$s1,fp.s1($fp)
+    9 00400070 afd2fff4		sw	$s2,fp.s2($fp)
+   10 00400074 afd3fff0		sw	$s3,fp.s3($fp)
+   11 00400078 afd4ffec		sw	$s4,fp.s4($fp)
+   12 0040007c afc40008		sw	$a0,fp.a0($fp)
+   13 00400080 afc5000c		sw	$a1,fp.a1($fp)
+   14 00400084 afc60010		sw	$a2,fp.a2($fp)
+   15 00400088 afc70014		sw	$a3,fp.a3($fp)
+   16                   
+   17                   
+   18 				li	$a0,'\n
+   18 0040008c 3404000a		ori	$a0,$0,0x0A
+   19 00400090 000002cc		syscall	$print_char
+   20 				li	$a0,'\n
+   20 00400094 3404000a		ori	$a0,$0,0x0A
+   21 00400098 000002cc		syscall	$print_char
+   22 				la	$a0,ButterFlyDebug
+   22 0040009c 3c041001		lui	$a0,0x1001
+   22 004000a0 34840130		ori	$a0,$a0,0x130
+   23 004000a4 0000010c		syscall	$print_string
+   24                   
+   25                   
+   26 				lw	$t0,Data
+   26 004000a8 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+   26 004000ac 8c28012c		lw	$t0,Data&0xFFFF($at)	
+   27 				lw	$t2,N
+   27 004000b0 3c011001		lui	$at,N&0x8000<<1+N>>16
+   27 004000b4 8c2a0168		lw	$t2,N&0xFFFF($at)	
+   28 				li	$s1,2
+   28 004000b8 34110002		ori	$s1,$0,0x02
+   29 				mul	$t2,$t2,$s1
+   29 004000bc 01510018		mult	$t2,$s1
+   29 004000c0 00005012		mflo	$t2
+   30                   
+   31                   
+   32                   
+   33 004000c4 1140000e	1:	beqz	$t2,98f	
+   34 				l.d	$f12,complex.real($t0)
+   34 004000c8 c50c0000		lwc1	$f12,complex.real($t0)
+   34 004000cc c50d0004		lwc1	$f12+1,complex.real+4($t0)
+   35 004000d0 000000cc		syscall	$print_double	
+   36                   	
+   37                   
+   38 				la	$a0,SPACE
+   38 004000d4 3c041001		lui	$a0,0x1001
+   38 004000d8 3484000a		ori	$a0,$a0,0x0A
+   39 004000dc 0000010c		syscall	$print_string
+   40 				l.d	$f12,complex.imaginary($t0)
+   40 004000e0 c50c0008		lwc1	$f12,complex.imaginary($t0)
+   40 004000e4 c50d000c		lwc1	$f12+1,complex.imaginary+4($t0)
+   41 004000e8 000000cc		syscall	$print_double
+   42                   	
+   43 				li	$a0,'\n
+   43 004000ec 3404000a		ori	$a0,$0,0x0A
+   44 004000f0 000002cc		syscall	$print_char
+   45                   
+   46 				addi	$t2,-2
+   46 004000f4 214afffe		addi	$t2,$t2,-2
+   47 				addi	$t0,16
+   47 004000f8 21080010		addi	$t0,$t0,16
+   48 004000fc 08100031		j	1b	
+   49                   	
+   50 00400100 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stacks
+   51 00400104 8fd0fffc		lw	$s0,fp.s0($fp)
+   52 00400108 8fd1fff8		lw	$s1,fp.s1($fp)
+   53 0040010c 8fd2fff4		lw	$s2,fp.s2($fp)
+   54 00400110 8fd3fff0		lw	$s3,fp.s3($fp)
+   55 00400114 8fd4ffec		lw	$s4,fp.s4($fp)
+   56 00400118 8fde0000		lw	$fp,fp.fp($fp)
+   57 0040011c 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+   58 00400120 03e00008		jr	$ra
+   71 				.include	"compops.asm"
+    1                   
+   72 				.include	"AlgoFFT.asm"
+    1 				.data
+    2 10010260 73696854	aandb:	.asciiz	"This is a and b  "
+    3 10010272 73696854	thisk:	.asciiz	"This is k "
+    4                   # 	.align	8
+    5                   
+    6 				.include	"fixedops.asm"
+    1          00000010	complex: 	.struct
+    2          00000000	real:		.double	0.0
+    3          00000008	imaginary:	.double	0.0
+    4                   
+    5                   # powerofTwo:	.double	2 cant remember what this is for
+    6 				.code
+    7                   complex.add:
+    8                   # complex:v0 complex::add(complex*arg1:a0,complex*arg2:a1)
+    9                   
+   10 00400124 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   11 00400128 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+   12 0040012c 23be0014		add	$fp,$sp,fp.fp-fp.s4
+   13 00400130 afdf0004		sw	$ra,fp.ra($fp)
+   14 00400134 afd0fffc		sw	$s0,fp.s0($fp)
+   15 00400138 afd1fff8		sw	$s1,fp.s1($fp)
+   16 0040013c afd2fff4		sw	$s2,fp.s2($fp)
+   17 00400140 afd3fff0		sw	$s3,fp.s3($fp)
+   18 00400144 afd4ffec		sw	$s4,fp.s4($fp)
+   19 00400148 afc40008		sw	$a0,fp.a0($fp)
+   20 0040014c afc5000c		sw	$a1,fp.a1($fp)
+   21 00400150 afc60010		sw	$a2,fp.a2($fp)
+   22 00400154 afc70014		sw	$a3,fp.a3($fp)
+   23 				l.d	$f12,complex.real($a0)
+   23 00400158 c48c0000		lwc1	$f12,complex.real($a0)
+   23 0040015c c48d0004		lwc1	$f12+1,complex.real+4($a0)
+   24                   #  	floor.d	$f12,$f12
+   25 				l.d	$f14,complex.imaginary($a0)
+   25 00400160 c48e0008		lwc1	$f14,complex.imaginary($a0)
+   25 00400164 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+   26                   # 	floor.d	$f14,$f14
+   27 				l.d	$f16,complex.real($a1)
+   27 00400168 c4b00000		lwc1	$f16,complex.real($a1)
+   27 0040016c c4b10004		lwc1	$f16+1,complex.real+4($a1)
+   28                   # 	floor.d	$f16,$f16
+   29 				l.d	$f18,complex.imaginary($a1)
+   29 00400170 c4b20008		lwc1	$f18,complex.imaginary($a1)
+   29 00400174 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+   30                   # 	floor.d	$f18,$f18
+   31 00400178 46306000		add.d	$f0,$f12,$f16
+   32 0040017c 46327080		add.d	$f2,$f14,$f18
+   33 				s.d	$f0,complex.real($v0)
+   33 00400180 e4400000		swc1	$f0,complex.real($v0)
+   33 00400184 e4410004		swc1	$f0+1,complex.real+4($v0)
+   34 				s.d	$f2,complex.imaginary($v0)
+   34 00400188 e4420008		swc1	$f2,complex.imaginary($v0)
+   34 0040018c e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+   35                   
+   36 				li	$a0,'\n
+   36 00400190 3404000a		ori	$a0,$0,0x0A
+   37 00400194 000002cc		syscall	$print_char
+   38                   
+   39                   
+   40                   	
+   41 00400198 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+   42 0040019c 8fd0fffc		lw	$s0,fp.s0($fp)
+   43 004001a0 8fd1fff8		lw	$s1,fp.s1($fp)
+   44 004001a4 8fd2fff4		lw	$s2,fp.s2($fp)
+   45 004001a8 8fd3fff0		lw	$s3,fp.s3($fp)
+   46 004001ac 8fd4ffec		lw	$s4,fp.s4($fp)
+   47 004001b0 8fde0000		lw	$fp,fp.fp($fp)
+   48 004001b4 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+   49 004001b8 03e00008		jr	$ra
+   50                   
+   51                   
+   52                   complex.mul:
+   53                   #complex:v0 complex::mul(complex * arg1:$a0,complex*arg2:a1)
+   54 004001bc 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   55 004001c0 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+   56 004001c4 23be0014		add	$fp,$sp,fp.fp-fp.s4
+   57 004001c8 afdf0004		sw	$ra,fp.ra($fp)
+   58 004001cc afd0fffc		sw	$s0,fp.s0($fp)
+   59 004001d0 afd1fff8		sw	$s1,fp.s1($fp)
+   60 004001d4 afd2fff4		sw	$s2,fp.s2($fp)
+   61 004001d8 afd3fff0		sw	$s3,fp.s3($fp)
+   62 004001dc afd4ffec		sw	$s4,fp.s4($fp)
+   63 004001e0 afc40008		sw	$a0,fp.a0($fp)
+   64 004001e4 afc5000c		sw	$a1,fp.a1($fp)
+   65 004001e8 afc60010		sw	$a2,fp.a2($fp)
+   66 004001ec afc70014		sw	$a3,fp.a3($fp)
+   67                   
+   68                   
+   69 				l.d	$f12,complex.real($a0)
+   69 004001f0 c48c0000		lwc1	$f12,complex.real($a0)
+   69 004001f4 c48d0004		lwc1	$f12+1,complex.real+4($a0)
+   70 				l.d	$f14,complex.imaginary($a0)
+   70 004001f8 c48e0008		lwc1	$f14,complex.imaginary($a0)
+   70 004001fc c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+   71 				l.d	$f16,complex.real($a1)
+   71 00400200 c4b00000		lwc1	$f16,complex.real($a1)
+   71 00400204 c4b10004		lwc1	$f16+1,complex.real+4($a1)
+   72 				l.d	$f18,complex.imaginary($a1)
+   72 00400208 c4b20008		lwc1	$f18,complex.imaginary($a1)
+   72 0040020c c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+   73                   
+   74                   
+   75                   	#f12 to f20
+   76 				l.d	$f10,roundingfacttor
+   76 00400210 3c011001		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+   76 00400214 c42a01a8		lwc1	$f10,roundingfacttor&0xFFFF($at)
+   76 00400218 c42b01ac		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+   77 0040021c 46206506		mov.d	$f20,$f12
+   78 00400220 4620a505		abs.d	$f20,$f20
+   79 00400224 462aa03e		c.le.d	$f20,$f10
+   80 00400228 45000003		bc1f	1f
+   81 0040022c 44806800		mtc1	$0,$f13
+   82 00400230 44806000		mtc1	$0,$f12
+   83 00400234 46806321		cvt.d.w	$f12,$f12
+   84                   
+   85                   1:
+   86 00400238 46207506		mov.d	$f20,$f14
+   87 0040023c 4620a505		abs.d	$f20,$f20
+   88 00400240 462aa03e		c.le.d	$f20,$f10
+   89 00400244 45000003		bc1f	2f
+   90 00400248 44807000		mtc1	$0,$f14
+   91 0040024c 44807800		mtc1	$0,$f15
+   92 00400250 468073a1		cvt.d.w	$f14,$f14
+   93                   
+   94                   2:	
+   95                   
+   96                   
+   97                   
+   98 00400254 46208506		mov.d	$f20,$f16
+   99 00400258 4620a505		abs.d	$f20,$f20
+  100 0040025c 462aa03e		c.le.d	$f20,$f10
+  101 00400260 45000003		bc1f	3f
+  102 00400264 44808000		mtc1	$0,$f16
+  103 00400268 44808800		mtc1	$0,$f17
+  104 0040026c 46808421		cvt.d.w	$f16,$f16
+  105                   3:
+  106 00400270 46209506		mov.d	$f20,$f18
+  107 00400274 4620a505		abs.d	$f20,$f20
+  108 00400278 462aa03e		c.le.d	$f20,$f10
+  109 0040027c 45000003		bc1f	4f
+  110 00400280 44809000		mtc1	$0,$f18
+  111 00400284 44809800		mtc1	$0,$f19
+  112 00400288 468094a1		cvt.d.w	$f18,$f18
+  113                   	
+  114                   	
+  115                   4:
+  116                   
+  117                   
+  118                   
+  119                   
+  120                   
+  121                   
+  122                   
+  123                   
+  124                   
+  125                   	#imaginary times imagery 
+  126 0040028c 46306002		mul.d	$f0,$f12,$f16 			#real and real
+  127 00400290 46327082		mul.d	$f2,$f14,$f18 		       	#imagine and maignary
+  128 00400294 46220001		sub.d	$f0,$f0,$f2 			#i*i is -1
+  129                   	
+  130 00400298 46307082		mul.d	$f2,$f14,$f16
+  131 0040029c 46326102		mul.d	$f4,$f12,$f18
+  132 004002a0 46241080		add.d	$f2,$f2,$f4
+  133                   
+  134 				s.d	$f0,complex.real($v0)
+  134 004002a4 e4400000		swc1	$f0,complex.real($v0)
+  134 004002a8 e4410004		swc1	$f0+1,complex.real+4($v0)
+  135                   
+  136 				s.d	$f2,complex.imaginary($v0)
+  136 004002ac e4420008		swc1	$f2,complex.imaginary($v0)
+  136 004002b0 e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  137 004002b4 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  138 004002b8 8fd0fffc		lw	$s0,fp.s0($fp)
+  139 004002bc 8fd1fff8		lw	$s1,fp.s1($fp)
+  140 004002c0 8fd2fff4		lw	$s2,fp.s2($fp)
+  141 004002c4 8fd3fff0		lw	$s3,fp.s3($fp)
+  142 004002c8 8fd4ffec		lw	$s4,fp.s4($fp)
+  143 004002cc 8fde0000		lw	$fp,fp.fp($fp)
+  144 004002d0 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  145 004002d4 03e00008		jr	$ra
+  146                   
+  147                   
+  148                   complex.sub:
+  149                   # complex:v0 complex::sub(complex*arg1:a0,complex*arg2:a1)
+  150                   
+  151 004002d8 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  152 004002dc afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+  153 004002e0 23be0014		add	$fp,$sp,fp.fp-fp.s4
+  154 004002e4 afdf0004		sw	$ra,fp.ra($fp)
+  155 004002e8 afd0fffc		sw	$s0,fp.s0($fp)
+  156 004002ec afd1fff8		sw	$s1,fp.s1($fp)
+  157 004002f0 afd2fff4		sw	$s2,fp.s2($fp)
+  158 004002f4 afd3fff0		sw	$s3,fp.s3($fp)
+  159 004002f8 afd4ffec		sw	$s4,fp.s4($fp)
+  160 004002fc afc40008		sw	$a0,fp.a0($fp)
+  161 00400300 afc5000c		sw	$a1,fp.a1($fp)
+  162 00400304 afc60010		sw	$a2,fp.a2($fp)
+  163 00400308 afc70014		sw	$a3,fp.a3($fp)
+  164 				l.d	$f12,complex.real($a0)
+  164 0040030c c48c0000		lwc1	$f12,complex.real($a0)
+  164 00400310 c48d0004		lwc1	$f12+1,complex.real+4($a0)
+  165                   #  	floor.d	$f12,$f12
+  166 				l.d	$f14,complex.imaginary($a0)
+  166 00400314 c48e0008		lwc1	$f14,complex.imaginary($a0)
+  166 00400318 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+  167                   #  	floor.d	$f14,$f14
+  168 				l.d	$f16,complex.real($a1)
+  168 0040031c c4b00000		lwc1	$f16,complex.real($a1)
+  168 00400320 c4b10004		lwc1	$f16+1,complex.real+4($a1)
+  169                   #  	floor.d	$f16,$f16
+  170 				l.d	$f18,complex.imaginary($a1)
+  170 00400324 c4b20008		lwc1	$f18,complex.imaginary($a1)
+  170 00400328 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+  171                   # 	floor.d	$f18,$f18
+  172                   
+  173                   	#f12 to f20
+  174 				l.d	$f10,roundingfacttor
+  174 0040032c 3c011001		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+  174 00400330 c42a01a8		lwc1	$f10,roundingfacttor&0xFFFF($at)
+  174 00400334 c42b01ac		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+  175 00400338 46206506		mov.d	$f20,$f12
+  176 0040033c 4620a505		abs.d	$f20,$f20
+  177 00400340 462aa03e		c.le.d	$f20,$f10
+  178 00400344 45000003		bc1f	1f
+  179 00400348 44806800		mtc1	$0,$f13
+  180 0040034c 44806000		mtc1	$0,$f12
+  181 00400350 46806321		cvt.d.w	$f12,$f12
+  182                   
+  183                   1:
+  184 00400354 46207506		mov.d	$f20,$f14
+  185 00400358 4620a505		abs.d	$f20,$f20
+  186 0040035c 462aa03e		c.le.d	$f20,$f10
+  187 00400360 45000003		bc1f	2f
+  188 00400364 44807000		mtc1	$0,$f14
+  189 00400368 44807800		mtc1	$0,$f15
+  190 0040036c 468073a1		cvt.d.w	$f14,$f14
+  191                   
+  192                   2:	
+  193                   
+  194                   
+  195                   
+  196 00400370 46208506		mov.d	$f20,$f16
+  197 00400374 4620a505		abs.d	$f20,$f20
+  198 00400378 462aa03e		c.le.d	$f20,$f10
+  199 0040037c 45000003		bc1f	3f
+  200 00400380 44808000		mtc1	$0,$f16
+  201 00400384 44808800		mtc1	$0,$f17
+  202 00400388 46808421		cvt.d.w	$f16,$f16
+  203                   3:
+  204 0040038c 46209506		mov.d	$f20,$f18
+  205 00400390 4620a505		abs.d	$f20,$f20
+  206 00400394 462aa03e		c.le.d	$f20,$f10
+  207 00400398 45000003		bc1f	4f
+  208 0040039c 44809000		mtc1	$0,$f18
+  209 004003a0 44809800		mtc1	$0,$f19
+  210 004003a4 468094a1		cvt.d.w	$f18,$f18
+  211                   	
+  212                   	
+  213                   4:
+  214                   
+  215                   
+  216                   
+  217                   
+  218                   
+  219 004003a8 46306001		sub.d	$f0,$f12,$f16
+  220 004003ac 46327081		sub.d	$f2,$f14,$f18
+  221 				s.d	$f0,complex.real($v0)
+  221 004003b0 e4400000		swc1	$f0,complex.real($v0)
+  221 004003b4 e4410004		swc1	$f0+1,complex.real+4($v0)
+  222 				s.d	$f2,complex.imaginary($v0)
+  222 004003b8 e4420008		swc1	$f2,complex.imaginary($v0)
+  222 004003bc e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  223 004003c0 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  224 004003c4 8fd0fffc		lw	$s0,fp.s0($fp)
+  225 004003c8 8fd1fff8		lw	$s1,fp.s1($fp)
+  226 004003cc 8fd2fff4		lw	$s2,fp.s2($fp)
+  227 004003d0 8fd3fff0		lw	$s3,fp.s3($fp)
+  228 004003d4 8fd4ffec		lw	$s4,fp.s4($fp)
+  229 004003d8 8fde0000		lw	$fp,fp.fp($fp)
+  230 004003dc 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  231 004003e0 03e00008		jr	$ra
+  232                   
+  233                   complex.div:
+  234                   #complex:v0 complex::div(complex*arg1:a0,complex*arg2:a1)
+  235 004003e4 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  236 004003e8 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+  237 004003ec 23be0014		add	$fp,$sp,fp.fp-fp.s4
+  238 004003f0 afdf0004		sw	$ra,fp.ra($fp)
+  239 004003f4 afd0fffc		sw	$s0,fp.s0($fp)
+  240 004003f8 afd1fff8		sw	$s1,fp.s1($fp)
+  241 004003fc afd2fff4		sw	$s2,fp.s2($fp)
+  242 00400400 afd3fff0		sw	$s3,fp.s3($fp)
+  243 00400404 afd4ffec		sw	$s4,fp.s4($fp)
+  244 00400408 afc40008		sw	$a0,fp.a0($fp)
+  245 0040040c afc5000c		sw	$a1,fp.a1($fp)
+  246 00400410 afc60010		sw	$a2,fp.a2($fp)
+  247 00400414 afc70014		sw	$a3,fp.a3($fp)
+  248 				l.d	$f12,complex.real($a0)
+  248 00400418 c48c0000		lwc1	$f12,complex.real($a0)
+  248 0040041c c48d0004		lwc1	$f12+1,complex.real+4($a0)
+  249 				l.d	$f14,complex.imaginary($a0)
+  249 00400420 c48e0008		lwc1	$f14,complex.imaginary($a0)
+  249 00400424 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+  250 				l.d	$f16,complex.real($a1)
+  250 00400428 c4b00000		lwc1	$f16,complex.real($a1)
+  250 0040042c c4b10004		lwc1	$f16+1,complex.real+4($a1)
+  251 				l.d	$f18,complex.imaginary($a1)
+  251 00400430 c4b20008		lwc1	$f18,complex.imaginary($a1)
+  251 00400434 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+  252                   
+  253                   		#f12 to f20
+  254 				l.d	$f10,roundingfacttor
+  254 00400438 3c011001		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+  254 0040043c c42a01a8		lwc1	$f10,roundingfacttor&0xFFFF($at)
+  254 00400440 c42b01ac		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+  255 00400444 46206506		mov.d	$f20,$f12
+  256 00400448 4620a505		abs.d	$f20,$f20
+  257 0040044c 462aa03e		c.le.d	$f20,$f10
+  258 00400450 45000003		bc1f	1f
+  259 00400454 44806800		mtc1	$0,$f13
+  260 00400458 44806000		mtc1	$0,$f12
+  261 0040045c 46806321		cvt.d.w	$f12,$f12
+  262                   
+  263                   1:
+  264 00400460 46207506		mov.d	$f20,$f14
+  265 00400464 4620a505		abs.d	$f20,$f20
+  266 00400468 462aa03e		c.le.d	$f20,$f10
+  267 0040046c 45000003		bc1f	2f
+  268 00400470 44807000		mtc1	$0,$f14
+  269 00400474 44807800		mtc1	$0,$f15
+  270 00400478 468073a1		cvt.d.w	$f14,$f14
+  271                   
+  272                   2:	
+  273                   
+  274                   
+  275                   
+  276 0040047c 46208506		mov.d	$f20,$f16
+  277 00400480 4620a505		abs.d	$f20,$f20
+  278 00400484 462aa03e		c.le.d	$f20,$f10
+  279 00400488 45000003		bc1f	3f
+  280 0040048c 44808000		mtc1	$0,$f16
+  281 00400490 44808800		mtc1	$0,$f17
+  282 00400494 46808421		cvt.d.w	$f16,$f16
+  283                   3:
+  284 00400498 46209506		mov.d	$f20,$f18
+  285 0040049c 4620a505		abs.d	$f20,$f20
+  286 004004a0 462aa03e		c.le.d	$f20,$f10
+  287 004004a4 45000003		bc1f	4f
+  288 004004a8 44809000		mtc1	$0,$f18
+  289 004004ac 44809800		mtc1	$0,$f19
+  290 004004b0 468094a1		cvt.d.w	$f18,$f18
+  291                   	
+  292                   	
+  293                   4:
+  294                   
+  295                   
+  296                   
+  297                   
+  298                   
+  299                   
+  300                   
+  301                   
+  302                   
+  303                   
+  304                   
+  305 004004b4 46306002		mul.d	$f0,$f12,$f16 	# a*c
+  306 004004b8 46327082		mul.d	$f2,$f14,$f18 	# b*d
+  307 004004bc 46220000		add.d	$f0,$f0,$f2 	# ac + bd
+  308 004004c0 46307082		mul.d	$f2,$f14,$f16	# bc
+  309 004004c4 46326102		mul.d	$f4,$f12,$f18	# ad
+  310 004004c8 46241081		sub.d	$f2,$f2,$f4	# bc-ad
+  311 004004cc 46308102		mul.d	$f4,$f16,$f16	#c²
+  312 004004d0 46329202		mul.d	$f8,$f18,$f18	#d²
+  313 004004d4 46282100		add.d	$f4,$f4,$f8	#c²+d²
+  314 004004d8 46240003		div.d	$f0,$f0,$f4	# whole real term
+  315 004004dc 46241083		div.d	$f2,$f2,$f4	# whole imaginary term
+  316 				s.d	$f0,complex.real($v0)
+  316 004004e0 e4400000		swc1	$f0,complex.real($v0)
+  316 004004e4 e4410004		swc1	$f0+1,complex.real+4($v0)
+  317 				s.d	$f2,complex.imaginary($v0)
+  317 004004e8 e4420008		swc1	$f2,complex.imaginary($v0)
+  317 004004ec e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  318 004004f0 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  319 004004f4 8fd0fffc		lw	$s0,fp.s0($fp)
+  320 004004f8 8fd1fff8		lw	$s1,fp.s1($fp)
+  321 004004fc 8fd2fff4		lw	$s2,fp.s2($fp)
+  322 00400500 8fd3fff0		lw	$s3,fp.s3($fp)
+  323 00400504 8fd4ffec		lw	$s4,fp.s4($fp)
+  324 00400508 8fde0000		lw	$fp,fp.fp($fp)
+  325 0040050c 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  326 00400510 03e00008		jr	$ra
+    7                   
+    8                   
+    9 				.data
+   10 10010280 aaaaaaaa	decimationtable:	.word	0xaaaaaaaa
+   11 10010284 55555555				.word	0x55555555
+   12 10010288 cccccccc				.word	0xcccccccc
+   13 1001028c 33333333				.word	0x33333333
+   14 10010290 f0f0f0f0				.word	0xf0f0f0f0
+   15 10010294 0f0f0f0f				.word	0x0f0f0f0f
+   16 10010298 ff00ff00				.word	0xff00ff00
+   17 1001029c 00ff00ff				.word	0x00ff00ff
+   18                   
+   19 100102a0 3ff00000	PHI:	.double	1.0,0.0			# 360  	N=0
+   20 100102b0 bff00000		.double	-1.0,0.0		# -180 	N=1
+   21 100102c0 00000000		.double	0.0,-1.0		# -90 	N=2
+   22 100102d0 3fe6a09e		.double	0.7071067811865476,-0.7071067811865475 	#-45 	N=3
+   23 100102e0 3fed906b		.double	0.9238795325112867,-0.3826834323650898	#-22.5 	N=4
+   24 100102f0 3fef6297		.double	0.9807852804032304,-0.19509032201612825 #-11.25 
+   25 10010300 3fefd88d		.double	0.9951847266721969,-0.0980171403295606
+   26 10010310 3feff621		.double	0.9987954562051724,-0.04906767432741801
+   27 10010320 3feffd88		.double	0.9996988186962042,-0.02454122852291229
+   28 10010330 3fefff62		.double	0.9999247018391445,-0.01227153828571993
+   29 10010340 3fefffd8		.double	0.9999811752826011,-6.135884649154475e-3
+   30 10010350 3feffff6		.double	0.9999952938095762,-3.067956762965976e-3
+   31 10010360 3feffffd		.double	0.9999988234517019,-1.5339801862847655e-3
+   32 10010370 3fefffff		.double	0.9999997058628822,-7.669903187427044e-4
+   33 10010380 3fefffff		.double	0.9999999264657179,-3.8349518757139553e-4
+   34 10010390 3fefffff		.double	0.9999999816164293,-1.9174759731070328e-4
+   35 100103a0 3fefffff		.double	0.9999999954041073,-9.587379909597734e-5
+   36 100103b0 3fefffff		.double 0.9999999988510269,-4.793689960306688e-5
+   37 100103c0 3fefffff		.double	0.9999999997127567,-2.3968449808418217e-5
+   38 100103d0 3fefffff		.double	0.9999999999281892,-1.1984224905069705e-5
+   39 100103e0 3fefffff		.double	0.9999999999820472,-5.992112452642428e-6
+   40                   
+   41                   
+   42                   
+   43                   
+   44                   
+   45                   
+   46                   
+   47                   
+   48 				.code
+   49                   
+   50                   
+   51                   
+   52                   complex.Cooley_Tukey_FFT:	
+   53                   
+   54 00400514 23bdffd4			addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   55 00400518 afbe0014			sw	$fp,fp.fp-fp.s4($sp)
+   56 0040051c 23be0014			add	$fp,$sp,fp.fp-fp.s4
+   57 00400520 afdf0004			sw	$ra,fp.ra($fp)
+   58 00400524 afd0fffc			sw	$s0,fp.s0($fp)
+   59 00400528 afd1fff8			sw	$s1,fp.s1($fp)
+   60 0040052c afd2fff4			sw	$s2,fp.s2($fp)
+   61 00400530 afd3fff0			sw	$s3,fp.s3($fp)
+   62 00400534 afd4ffec			sw	$s4,fp.s4($fp)
+   63 00400538 afc40008			sw	$a0,fp.a0($fp)
+   64 0040053c afc5000c			sw	$a1,fp.a1($fp)
+   65 00400540 afc60010			sw	$a2,fp.a2($fp)
+   66 00400544 afc70014			sw	$a3,fp.a3($fp)				
+   67                   
+   68                   
+   69                   
+   70                   
+   71                   
+   72                   
+   73                   # void fft(CArray &x,unsigned int m)
+   74                   					# {
+   75                   					#     // DFT
+   76                   	#     unsigned int N = x.size(), k = N, n;
+   77 					lw	$t0,N		# N = size
+   77 00400548 3c011001		lui	$at,N&0x8000<<1+N>>16
+   77 0040054c 8c280168		lw	$t0,N&0xFFFF($at)	
+   78 00400550 01004821			mov	$t1,$t0		# k = N
+   79 					li	$t2,0		#n = 0	
+   79 00400554 340a0000		ori	$t2,$0,0x00
+   80                   					# double thetaT = PI / N; // division done in Long double output into double
+   81 				 	l.d	$f0,PI
+   81 00400558 3c011001		lui	$at,PI&0x8000<<1+PI>>16
+   81 0040055c c4200148		lwc1	$f0,PI&0xFFFF($at)
+   81 00400560 c421014c		lwc1	$f0+1,PI&0xFFFF+4($at)
+   82 				 	l.d	$f2,Nfloat	
+   82 00400564 3c011001		lui	$at,Nfloat&0x8000<<1+Nfloat>>16
+   82 00400568 c4220160		lwc1	$f2,Nfloat&0xFFFF($at)
+   82 0040056c c4230164		lwc1	$f2+1,Nfloat&0xFFFF+4($at)
+   83 00400570 46220103		 	div.d	$f4,$f0,$f2
+   84 				 	s.d	$f4,ThetaT
+   84 00400574 3c011001		lui	$at,ThetaT&0x8000<<1+ThetaT>>16
+   84 00400578 e4240170		swc1	$f4,ThetaT&0xFFFF($at)
+   84 0040057c e4250174		swc1	$f4+1,ThetaT&0xFFFF+4($at)
+   85                   	 				#Complex phiT = Complex(cos(thetaT), -sin(thetaT)), T;	
+   86                   	 	#f4 has thetaT	
+   87 00400580 46202190		 	cos.d	$f6,$f4
+   88 00400584 46202208		 	sin.d	$f8,$f4
+   89 00400588 46204207		 	neg.d	$f8,$f8
+   90 				 	s.d	$f6,phiT
+   90 0040058c 3c011001		lui	$at,phiT&0x8000<<1+phiT>>16
+   90 00400590 e4260178		swc1	$f6,phiT&0xFFFF($at)
+   90 00400594 e427017c		swc1	$f6+1,phiT&0xFFFF+4($at)
+   91 				 	la	$t9,phiT
+   91 00400598 3c191001		lui	$t9,0x1001
+   91 0040059c 37390178		ori	$t9,$t9,0x178
+   92 				 	s.d	$f8,8($t9)	#basically storing to the double next phiT in memory
+   92 004005a0 e7280008		swc1	$f8,8($t9)
+   92 004005a4 e729000c		swc1	$f8+1,8+4($t9)
+   93                   	
+   94                   	
+   95                   	
+   96 					lw	$t8,m
+   96 004005a8 3c011001		lui	$at,m&0x8000<<1+m>>16
+   96 004005ac 8c3801a0		lw	$t8,m&0xFFFF($at)	
+   97                   			
+   98                   		
+   99                   	
+  100                   	
+  101 					li	$a0,'\n
+  101 004005b0 3404000a		ori	$a0,$0,0x0A
+  102 004005b4 000002cc			syscall	$print_char
+  103 					li	$a0,'\n
+  103 004005b8 3404000a		ori	$a0,$0,0x0A
+  104 004005bc 000002cc			syscall	$print_char
+  105 					la	$a0,firstphit
+  105 004005c0 3c041001		lui	$a0,0x1001
+  105 004005c4 3484007b		ori	$a0,$a0,0x7B
+  106 004005c8 0000010c			syscall	$print_string	
+  107 					l.d	$f12,phiT
+  107 004005cc 3c011001		lui	$at,phiT&0x8000<<1+phiT>>16
+  107 004005d0 c42c0178		lwc1	$f12,phiT&0xFFFF($at)
+  107 004005d4 c42d017c		lwc1	$f12+1,phiT&0xFFFF+4($at)
+  108 004005d8 000000cc			syscall	$print_double
+  109 					l.d	$f12,8($t9)
+  109 004005dc c72c0008		lwc1	$f12,8($t9)
+  109 004005e0 c72d000c		lwc1	$f12+1,8+4($t9)
+  110 004005e4 000000cc			syscall	$print_double
+  111                   		#t9 is now phiT address
+  112                   
+  113                   
+  114                   
+  115                   
+  116                   				#     while (k > 1)
+  117                   				#     {
+  118 					li	$t6,1
+  118 004005e8 340e0001		ori	$t6,$0,0x01
+  119 			top:		bgt	$t6,$t1,whileend
+  119 004005ec 012e082a		slt	$at,$t1,$t6
+  119 004005f0 142000a6		bne	$at,$0,whileend
+  120 004005f4 11c900a5			beq	$t6,$t1,whileend
+  121                   			#      n = k;
+  122 004005f8 01205021			mov	$t2,$t1
+  123                   				#      k >>= 1;
+  124 004005fc 00094842			srl	$t1,$t1,1
+  125 					li	$a0,'\n
+  125 00400600 3404000a		ori	$a0,$0,0x0A
+  126 00400604 000002cc			syscall	$print_char
+  127 					la	$a0,thisk
+  127 00400608 3c041001		lui	$a0,0x1001
+  127 0040060c 34840272		ori	$a0,$a0,0x272
+  128 00400610 0000010c			syscall	$print_string
+  129 00400614 01202021			mov	$a0,$t1
+  130 00400618 0000004c			syscall	$print_int
+  131                   
+  132                   				#      phiT = phiT * phiT;
+  133 					la	$v0,phiT  		#output stored here
+  133 0040061c 3c021001		lui	$v0,0x1001
+  133 00400620 34420178		ori	$v0,$v0,0x178
+  134 					la	$a0,phiT
+  134 00400624 3c041001		lui	$a0,0x1001
+  134 00400628 34840178		ori	$a0,$a0,0x178
+  135 					la	$a1,phiT
+  135 0040062c 3c051001		lui	$a1,0x1001
+  135 00400630 34a50178		ori	$a1,$a1,0x178
+  136                   	
+  137                   	
+  138 00400634 0c10006f			jal	complex.mul
+  139                   	
+  140 					li		$a0,'\n	#this is the debug string to view the first phit calc
+  140 00400638 3404000a		ori	$a0,$0,0x0A
+  141 0040063c 000002cc			syscall		$print_char
+  142 					la		$a0,firstph2
+  142 00400640 3c041001		lui	$a0,0x1001
+  142 00400644 3484009f		ori	$a0,$a0,0x9F
+  143 00400648 0000010c			syscall		$print_string
+  144                   	
+  145 					l.d		$f12,phiT	#prints real value of phit
+  145 0040064c 3c011001		lui	$at,phiT&0x8000<<1+phiT>>16
+  145 00400650 c42c0178		lwc1	$f12,phiT&0xFFFF($at)
+  145 00400654 c42d017c		lwc1	$f12+1,phiT&0xFFFF+4($at)
+  146 00400658 000000cc			syscall		$print_double
+  147                   	
+  148                   	
+  149 					la		$a0,SPACE
+  149 0040065c 3c041001		lui	$a0,0x1001
+  149 00400660 3484000a		ori	$a0,$a0,0x0A
+  150 00400664 0000010c			syscall		$print_string
+  151                   	
+  152                   	
+  153 					la		$a0,phiT	#prints the imaginary v alue of phit
+  153 00400668 3c041001		lui	$a0,0x1001
+  153 0040066c 34840178		ori	$a0,$a0,0x178
+  154 					l.d		$f12,8($a0)
+  154 00400670 c48c0008		lwc1	$f12,8($a0)
+  154 00400674 c48d000c		lwc1	$f12+1,8+4($a0)
+  155 00400678 000000cc			syscall		$print_double
+  156                   	
+  157 					li		$a3,1
+  157 0040067c 34070001		ori	$a3,$0,0x01
+  158 00400680 44870000			mtc1		$a3,$f0
+  159 00400684 46800021			cvt.d.w		$f0,$f0
+  160 					la		$a3,T
+  160 00400688 3c071001		lui	$a3,0x1001
+  160 0040068c 34e70150		ori	$a3,$a3,0x150
+  161 					s.d		$f0,complex.real($a3)
+  161 00400690 e4e00000		swc1	$f0,complex.real($a3)
+  161 00400694 e4e10004		swc1	$f0+1,complex.real+4($a3)
+  162                   		
+  163 00400698 44800000			mtc1		$0,$f0
+  164 0040069c 44800800			mtc1		$0,$f1
+  165 004006a0 46800021			cvt.d.w		$f0,$f0
+  166 					s.d		$f0,complex.imaginary($a3)
+  166 004006a4 e4e00008		swc1	$f0,complex.imaginary($a3)
+  166 004006a8 e4e1000c		swc1	$f0+1,complex.imaginary+4($a3)
+  167                   	
+  168 					li		$t9,0 #l =0				
+  168 004006ac 34190000		ori	$t9,$0,0x00
+  169                   tloop:				#         for (unsigned int l = 0; l < k; l++)
+  170                   	
+  171 					bge		$t9,$t1,tloopend	
+  171 004006b0 0329082a		slt	$at,$t9,$t1
+  171 004006b4 10200074		beq	$at,$0,tloopend
+  172                   				#         {floop
+  173                   				#             for (unsigned int a = l; a < N; a += n)
+  174 004006b8 0320c021			mov		$t8,$t9	#a = l
+  175 			sloop:	bge		$t8,$t0,sloopend
+  175 004006bc 0308082a		slt	$at,$t8,$t0
+  175 004006c0 1020005c		beq	$at,$0,sloopend
+  176                   					#             
+  177                   					# 	unsigned int b = a + k;
+  178 004006c4 03095820		add			$t3,$t8,$t1	# Complex t = x[a] - x[b];
+  179 				lw			$t7,Data 		#array
+  179 004006c8 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  179 004006cc 8c2f012c		lw	$t7,Data&0xFFFF($at)	
+  180                   
+  181                   
+  182                   
+  183                   	#DEBUG strins to print and b
+  184 				li			$a0,'\n
+  184 004006d0 3404000a		ori	$a0,$0,0x0A
+  185 004006d4 000002cc		syscall			$print_char
+  186 				la			$a0,aandb
+  186 004006d8 3c041001		lui	$a0,0x1001
+  186 004006dc 34840260		ori	$a0,$a0,0x260
+  187 004006e0 0000010c		syscall			$print_string
+  188 004006e4 03002021		mov			$a0,$t8
+  189 004006e8 0000004c		syscall			$print_int
+  190 				la			$a0,SPACE
+  190 004006ec 3c041001		lui	$a0,0x1001
+  190 004006f0 3484000a		ori	$a0,$a0,0x0A
+  191 004006f4 0000010c		syscall			$print_string
+  192 004006f8 01602021		mov			$a0,$t3
+  193 004006fc 0000004c		syscall			$print_int
+  194                   	#Debug strgins to end and b
+  195 				li			$s1,16
+  195 00400700 34110010		ori	$s1,$0,0x10
+  196 				mul			$a0,$t8,$s1
+  196 00400704 03110018		mult	$t8,$s1
+  196 00400708 00002012		mflo	$a0
+  197                   
+  198 0040070c 01e42020		add			$a0,$t7,$a0 #x[a]	
+  199                   
+  200 				mul			$s0,$t3,$s1	# multily b by 16
+  200 00400710 01710018		mult	$t3,$s1
+  200 00400714 00008012		mflo	$s0
+  201                   	
+  202                   
+  203                   
+  204                   	
+  205 00400718 01f02820		add			$a1,$t7,$s0
+  206                   
+  207 				la			$v0,t	#need to know the address of the output	
+  207 0040071c 3c021001		lui	$v0,0x1001
+  207 00400720 34420190		ori	$v0,$v0,0x190
+  208 00400724 0c1000b6		jal			complex.sub #cahnged from mul	
+  209                   
+  210                   
+  211                   
+  212 				li			$a0,'\n		#this is t printing
+  212 00400728 3404000a		ori	$a0,$0,0x0A
+  213 0040072c 000002cc		syscall			$print_char
+  214 				la			$a0,compsub
+  214 00400730 3c041001		lui	$a0,0x1001
+  214 00400734 348400eb		ori	$a0,$a0,0xEB
+  215 00400738 0000010c		syscall			$print_string
+  216 				l.d			$f12,t
+  216 0040073c 3c011001		lui	$at,t&0x8000<<1+t>>16
+  216 00400740 c42c0190		lwc1	$f12,t&0xFFFF($at)
+  216 00400744 c42d0194		lwc1	$f12+1,t&0xFFFF+4($at)
+  217 00400748 000000cc		syscall			$print_double
+  218 				la			$a0,SPACE
+  218 0040074c 3c041001		lui	$a0,0x1001
+  218 00400750 3484000a		ori	$a0,$a0,0x0A
+  219 00400754 0000010c		syscall			$print_string
+  220 				la			$s5,t
+  220 00400758 3c151001		lui	$s5,0x1001
+  220 0040075c 36b50190		ori	$s5,$s5,0x190
+  221 				l.d			$f12,8($s5)
+  221 00400760 c6ac0008		lwc1	$f12,8($s5)
+  221 00400764 c6ad000c		lwc1	$f12+1,8+4($s5)
+  222 00400768 000000cc		syscall			$print_double
+  223                   
+  224                   	
+  225                   			#                 x[a] += x[b];
+  226 0040076c 03008021		mov			$s0,$t8	#t8 is a
+  227 				li			$s1,16
+  227 00400770 34110010		ori	$s1,$0,0x10
+  228 				mul			$s0,$s0,$s1 #byte index a
+  228 00400774 02110018		mult	$s0,$s1
+  228 00400778 00008012		mflo	$s0
+  229 0040077c 01f02020		add			$a0,$t7,$s0 #x[a]
+  230 00400780 00801021		mov			$v0,$a0	#fixes
+  231 00400784 01608021		mov			$s0,$t3	#b
+  232 				mul			$s0,$s0,$s1	# multily b by 16
+  232 00400788 02110018		mult	$s0,$s1
+  232 0040078c 00008012		mflo	$s0
+  233 00400790 01f02820		add			$a1,$t7,$s0
+  234                   
+  235 00400794 0c100049		jal			complex.add
+  236                   	
+  237                   
+  238                   # 	li	$a0,'\n
+  239                   # 	syscall	$print_char
+  240                   	
+  241 				la			$a0,compadd
+  241 00400798 3c041001		lui	$a0,0x1001
+  241 0040079c 348400c9		ori	$a0,$a0,0xC9
+  242 004007a0 0000010c		syscall			$print_string
+  243                   # 
+  244 				l.d			$f12,complex.real($v0)
+  244 004007a4 c44c0000		lwc1	$f12,complex.real($v0)
+  244 004007a8 c44d0004		lwc1	$f12+1,complex.real+4($v0)
+  245 004007ac 000000cc	 	syscall			$print_double
+  246                   
+  247 				la			$a0,SPACE
+  247 004007b0 3c041001		lui	$a0,0x1001
+  247 004007b4 3484000a		ori	$a0,$a0,0x0A
+  248 004007b8 0000010c		syscall			$print_string
+  249 				l.d			$f12,complex.imaginary($v0)
+  249 004007bc c44c0008		lwc1	$f12,complex.imaginary($v0)
+  249 004007c0 c44d000c		lwc1	$f12+1,complex.imaginary+4($v0)
+  250 004007c4 000000cc		syscall			$print_double
+  251                   
+  252                   
+  253                   			#                 x[b] = t * T;
+  254 004007c8 01608021		mov			$s0,$t3	#b
+  255 				mul			$s0,$s0,$s1	# multily b by 16
+  255 004007cc 02110018		mult	$s0,$s1
+  255 004007d0 00008012		mflo	$s0
+  256 004007d4 020f1020		add			$v0,$s0,$t7
+  257                   
+  258 				la			$a0,t
+  258 004007d8 3c041001		lui	$a0,0x1001
+  258 004007dc 34840190		ori	$a0,$a0,0x190
+  259 				la			$a1,T
+  259 004007e0 3c051001		lui	$a1,0x1001
+  259 004007e4 34a50150		ori	$a1,$a1,0x150
+  260 004007e8 0c10006f		jal			complex.mul
+  261                   
+  262 				li			$a0,'\n
+  262 004007ec 3404000a		ori	$a0,$0,0x0A
+  263 004007f0 000002cc		syscall		$print_char
+  264 				la			$a0,tandt
+  264 004007f4 3c041001		lui	$a0,0x1001
+  264 004007f8 3484010d		ori	$a0,$a0,0x10D
+  265 004007fc 0000010c		syscall		$print_string
+  266                   
+  267                   
+  268 				l.d			$f12,($v0)
+  268 00400800 c44c0000		lwc1	$f12,0($v0)
+  268 00400804 c44d0004		lwc1	$f12+1,0+4($v0)
+  269 00400808 000000cc		syscall		$print_double
+  270 				la			$a0,SPACE
+  270 0040080c 3c041001		lui	$a0,0x1001
+  270 00400810 3484000a		ori	$a0,$a0,0x0A
+  271 00400814 0000010c		syscall		$print_string
+  272 				l.d			$f12,8($v0)
+  272 00400818 c44c0008		lwc1	$f12,8($v0)
+  272 0040081c c44d000c		lwc1	$f12+1,8+4($v0)
+  273 00400820 000000cc		syscall		$print_double
+  274 				li			$a0,'\n
+  274 00400824 3404000a		ori	$a0,$0,0x0A
+  275 00400828 000002cc		syscall		$print_char
+  276 0040082c 030ac020		add			$t8,$t8,$t2 #a+=n
+  277 00400830 081001af		j			sloop
+  278                   sloopend:	#             }sloop
+  279                   						#             T *= phiT;
+  280 				la			$a0,T
+  280 00400834 3c041001		lui	$a0,0x1001
+  280 00400838 34840150		ori	$a0,$a0,0x150
+  281 				la			$a1,phiT
+  281 0040083c 3c051001		lui	$a1,0x1001
+  281 00400840 34a50178		ori	$a1,$a1,0x178
+  282 				la			$v0,T
+  282 00400844 3c021001		lui	$v0,0x1001
+  282 00400848 34420150		ori	$v0,$v0,0x150
+  283                   
+  284 0040084c 0c10006f		jal			complex.mul
+  285                   
+  286 				addi			$t9,1
+  286 00400850 23390001		addi	$t9,$t9,1
+  287 				la			$a0,TtT
+  287 00400854 3c041001		lui	$a0,0x1001
+  287 00400858 34840000		ori	$a0,$a0,0x00
+  288 0040085c 0000010c		syscall		$print_string
+  289                   	
+  290 				l.d			$f12,complex.real($v0)
+  290 00400860 c44c0000		lwc1	$f12,complex.real($v0)
+  290 00400864 c44d0004		lwc1	$f12+1,complex.real+4($v0)
+  291 00400868 000000cc		syscall		$print_double
+  292                   
+  293 				la			$a0,SPACE
+  293 0040086c 3c041001		lui	$a0,0x1001
+  293 00400870 3484000a		ori	$a0,$a0,0x0A
+  294 00400874 0000010c		syscall		$print_string
+  295                   
+  296 				l.d			$f12,complex.imaginary($v0)
+  296 00400878 c44c0008		lwc1	$f12,complex.imaginary($v0)
+  296 0040087c c44d000c		lwc1	$f12+1,complex.imaginary+4($v0)
+  297 00400880 000000cc		syscall		$print_double	
+  298                   
+  299 00400884 081001ac		j			tloop			#         }floop
+  300                   
+  301                   tloopend:
+  302 00400888 0810017b		j			top
+  303                   
+  304                   #end of while lop
+  305                   	
+  306                   				#     }while
+  307                   whileend:
+  308 0040088c 0c100016		jal			printalldata
+  309 				la			$s6,decimationtable
+  309 00400890 3c161001		lui	$s6,0x1001
+  309 00400894 36d60280		ori	$s6,$s6,0x280
+  310                   
+  311                   				#     // Decimate
+  312                   				#     //    unsigned int m = (unsigned int)log2(N);
+  313                   			#     
+  314 				li			$t8,0 #a=0				#{
+  314 00400898 34180000		ori	$t8,$0,0x00
+  315 				lw			$s7,N
+  315 0040089c 3c011001		lui	$at,N&0x8000<<1+N>>16
+  315 004008a0 8c370168		lw	$s7,N&0xFFFF($at)	
+  316                   # 	li			$a0,'V
+  317                   # 	syscall		$print_char
+  318 				l.d			$f12,phiT
+  318 004008a4 3c011001		lui	$at,phiT&0x8000<<1+phiT>>16
+  318 004008a8 c42c0178		lwc1	$f12,phiT&0xFFFF($at)
+  318 004008ac c42d017c		lwc1	$f12+1,phiT&0xFFFF+4($at)
+  319 004008b0 000000cc		syscall		$print_double
+  320                   
+  321                   
+  322                   
+  323                   	#t8 = a
+  324                   	#s7 = N
+  325                   
+  326 				lw	$t7,Data
+  326 004008b4 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  326 004008b8 8c2f012c		lw	$t7,Data&0xFFFF($at)	
+  327 				la			$s6,decimationtable
+  327 004008bc 3c161001		lui	$s6,0x1001
+  327 004008c0 36d60280		ori	$s6,$s6,0x280
+  328 				li	$t8,0	#debug here	This is the i for the for loop
+  328 004008c4 34180000		ori	$t8,$0,0x00
+  329                   Decimate:
+  330                   bga:
+  331                   
+  332                   
+  333                   
+  334                   
+  335                   
+  336                   # 	jal			printalldata  #breakpointhere
+  337                   
+  338                   	#while N>a
+  339 				bge			$t8,$s7,FinishDecimate	#     for (unsigned int a = 0; a < N; a++)
+  339 004008c8 0317082a		slt	$at,$t8,$s7
+  339 004008cc 10200042		beq	$at,$0,FinishDecimate
+  340                   
+  341                   
+  342                   
+  343                   
+  344                   
+  345                   
+  346                   
+  347                   
+  348                   
+  349                   
+  350                   
+  351                   				#         unsigned int b = a;
+  352 004008d0 03005821		mov			$t3,$t8
+  353                   				#         // Reverse bits
+  354                   				#         b = (((b & 0xaaaaaaaa) >> 1) | ((b & 0x55555555) << 1));
+  355 004008d4 8ed30000		lw			$s3,0($s6)
+  356                   
+  357 004008d8 0173c824		and			$t9,$t3,$s3
+  358 004008dc 0019c842		srl			$t9,$t9,1
+  359                   
+  360 004008e0 8ed30004		lw			$s3,4($s6)
+  361 004008e4 01739024		and			$s2,$t3,$s3
+  362 004008e8 00129040		sll			$s2,$s2,1
+  363 004008ec 03325825		or			$t3,$t9,$s2
+  364                   				#         b = (((b & 0xcccccccc) >> 2) | ((b & 0x33333333) << 2));
+  365 004008f0 8ed30008		lw			$s3,8($s6)
+  366 004008f4 0173c824		and			$t9,$t3,$s3
+  367 004008f8 0019c882		srl			$t9,$t9,2
+  368 004008fc 8ed3000c		lw			$s3,12($s6)
+  369                   
+  370 00400900 01739024		and			$s2,$t3,$s3
+  371 00400904 00129080		sll			$s2,$s2,2
+  372 00400908 03325825		or			$t3,$t9,$s2
+  373                   				#         b = (((b & 0xf0f0f0f0) >> 4) | ((b & 0x0f0f0f0f) << 4));
+  374                   
+  375 0040090c 8ed30010		lw			$s3,16($s6)
+  376 00400910 0173c824		and			$t9,$t3,$s3
+  377 00400914 0019c902		srl			$t9,$t9,4
+  378 00400918 8ed30014		lw			$s3,20($s6)
+  379 0040091c 01739024		and			$s2,$t3,$s3
+  380 00400920 00129100		sll			$s2,$s2,4
+  381 00400924 03325825		or			$t3,$t9,$s2
+  382                   				#         b = (((b & 0xff00ff00) >> 8) | ((b & 0x00ff00ff) << 8));
+  383 00400928 8ed30018		lw			$s3,24($s6)
+  384 0040092c 0173c824		and			$t9,$t3,$s3
+  385 00400930 0019ca02		srl			$t9,$t9,8
+  386 00400934 8ed3001c		lw			$s3,28($s6)
+  387 00400938 01739024		and			$s2,$t3,$s3
+  388 0040093c 00129200		sll			$s2,$s2,8
+  389 00400940 03325825		or			$t3,$t9,$s2
+  390                   				#         b = ((b >> 16) | (b << 16)) >> (32 - m);
+  391 00400944 000bcc02		srl			$t9,$t3,16
+  392 00400948 000b8400		sll			$s0,$t3,16
+  393                   	
+  394 0040094c 0330c825		or			$t9,$t9,$s0
+  395                   
+  396 				lw			$v1,m
+  396 00400950 3c011001		lui	$at,m&0x8000<<1+m>>16
+  396 00400954 8c2301a0		lw	$v1,m&0xFFFF($at)	
+  397 00400958 00031822		neg			$v1,$v1
+  398 0040095c 20710020		addi			$s1,$v1,32
+  399 00400960 02395806		srl			$t3,$t9,$s1
+  400                   	
+  401                   # bgaa:				#         if (b > a)
+  402                   				#         {
+  403 				bgt			$t8,$t3,2f
+  403 00400964 0178082a		slt	$at,$t3,$t8
+  403 00400968 14200019		bne	$at,$0,2f
+  404 0040096c 130b0018		beq			$t8,$t3,2f
+  405                   1:				#             //            Complex t = x[a];
+  406                   
+  407                   
+  408                   
+  409                   
+  410                   
+  411                   
+  412 				li			$s7,16
+  412 00400970 34170010		ori	$s7,$0,0x10
+  413 				mul			$s4,$s7,$t8
+  413 00400974 02f80018		mult	$s7,$t8
+  413 00400978 0000a012		mflo	$s4
+  414 0040097c 01f4a020		add			$s4,$t7,$s4
+  415 				l.d			$f0,complex.real($s4)
+  415 00400980 c6800000		lwc1	$f0,complex.real($s4)
+  415 00400984 c6810004		lwc1	$f0+1,complex.real+4($s4)
+  416 				l.d			$f2,complex.imaginary($s4)
+  416 00400988 c6820008		lwc1	$f2,complex.imaginary($s4)
+  416 0040098c c683000c		lwc1	$f2+1,complex.imaginary+4($s4)
+  417                   # 	s.d			$f0,t
+  418                   # 	l.d			$f2,t
+  419                   			#             //            x[a] = x[b];
+  420 				li			$s7,16
+  420 00400990 34170010		ori	$s7,$0,0x10
+  421 				mul			$s7,$s7,$t3
+  421 00400994 02eb0018		mult	$s7,$t3
+  421 00400998 0000b812		mflo	$s7
+  422 0040099c 01f7a820		add			$s5,$t7,$s7	#s5 is x[b]
+  423 				l.d			$f4,complex.real($s5)
+  423 004009a0 c6a40000		lwc1	$f4,complex.real($s5)
+  423 004009a4 c6a50004		lwc1	$f4+1,complex.real+4($s5)
+  424 				l.d			$f6,complex.imaginary($s5)
+  424 004009a8 c6a60008		lwc1	$f6,complex.imaginary($s5)
+  424 004009ac c6a7000c		lwc1	$f6+1,complex.imaginary+4($s5)
+  425                   		#we do the swap in 4 instructions
+  426 				s.d			$f4,complex.real($s4)	
+  426 004009b0 e6840000		swc1	$f4,complex.real($s4)
+  426 004009b4 e6850004		swc1	$f4+1,complex.real+4($s4)
+  427 				s.d			$f6,complex.imaginary($s4)
+  427 004009b8 e6860008		swc1	$f6,complex.imaginary($s4)
+  427 004009bc e687000c		swc1	$f6+1,complex.imaginary+4($s4)
+  428 				s.d			$f0,complex.real($s5)	
+  428 004009c0 e6a00000		swc1	$f0,complex.real($s5)
+  428 004009c4 e6a10004		swc1	$f0+1,complex.real+4($s5)
+  429 				s.d			$f2,complex.imaginary($s5)
+  429 004009c8 e6a20008		swc1	$f2,complex.imaginary($s5)
+  429 004009cc e6a3000c		swc1	$f2+1,complex.imaginary+4($s5)
+  430                   
+  431                   
+  432                   ##################################################swap end
+  433                   				#         }
+  434                   2:
+  435                   
+  436 				addi			$t8,1
+  436 004009d0 23180001		addi	$t8,$t8,1
+  437 004009d4 08100232		j			Decimate	
+  438                   FinishDecimate:	
+  439                   		#     }
+  440                   			
+  441                   
+  442 				li			$a0,'\n
+  442 004009d8 3404000a		ori	$a0,$0,0x0A
+  443 004009dc 000002cc		syscall			$print_char
+  444                   # 	lw			$a0,Data
+  445                   # 	syscall			$print_int
+  446                   
+  447                   
+  448                   
+  449                   
+  450                   97:	
+  451                   
+  452                   
+  453                   
+  454                   
+  455                   END:
+  456                   # 	  jal			printalldata
+  457                   
+  458                   
+  459                   98:	
+  460                   
+  461                   	
+  462 004009e0 8fdf0004		lw	$ra,fp.ra($fp)	# restore registers from stacksese
+  463 004009e4 8fd0fffc		lw	$s0,fp.s0($fp)
+  464 004009e8 8fd1fff8		lw	$s1,fp.s1($fp)
+  465 004009ec 8fd2fff4		lw	$s2,fp.s2($fp)
+  466 004009f0 8fd3fff0		lw	$s3,fp.s3($fp)
+  467 004009f4 8fd4ffec		lw	$s4,fp.s4($fp)
+  468 004009f8 8fde0000		lw	$fp,fp.fp($fp)
+  469 004009fc 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  470 00400a00 03e00008		jr	$ra
+  471                   
+  472                   
+  473                   
+  474                   complex.IFFT:	
+  475                   
+  476 00400a04 23bdffd4			addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  477 00400a08 afbe0014			sw	$fp,fp.fp-fp.s4($sp)
+  478 00400a0c 23be0014			add	$fp,$sp,fp.fp-fp.s4
+  479 00400a10 afdf0004			sw	$ra,fp.ra($fp)
+  480 00400a14 afd0fffc			sw	$s0,fp.s0($fp)
+  481 00400a18 afd1fff8			sw	$s1,fp.s1($fp)
+  482 00400a1c afd2fff4			sw	$s2,fp.s2($fp)
+  483 00400a20 afd3fff0			sw	$s3,fp.s3($fp)
+  484 00400a24 afd4ffec			sw	$s4,fp.s4($fp)
+  485 00400a28 afc40008			sw	$a0,fp.a0($fp)
+  486 00400a2c afc5000c			sw	$a1,fp.a1($fp)
+  487 00400a30 afc60010			sw	$a2,fp.a2($fp)
+  488 00400a34 afc70014			sw	$a3,fp.a3($fp)	
+  489                   
+  490                   
+  491 				lw	$t0,N
+  491 00400a38 3c011001		lui	$at,N&0x8000<<1+N>>16
+  491 00400a3c 8c280168		lw	$t0,N&0xFFFF($at)	
+  492 				lw	$t1,Data
+  492 00400a40 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  492 00400a44 8c29012c		lw	$t1,Data&0xFFFF($at)	
+  493                   
+  494                   
+  495 00400a48 11000008	1:		beqz	$t0,Finished_Conjugating
+  496 					l.d	$f12,complex.imaginary($t1)
+  496 00400a4c c52c0008		lwc1	$f12,complex.imaginary($t1)
+  496 00400a50 c52d000c		lwc1	$f12+1,complex.imaginary+4($t1)
+  497 00400a54 46206307			neg.d	$f12,$f12
+  498 					s.d	$f12,complex.imaginary($t1)
+  498 00400a58 e52c0008		swc1	$f12,complex.imaginary($t1)
+  498 00400a5c e52d000c		swc1	$f12+1,complex.imaginary+4($t1)
+  499                   		
+  500 					addi	$t0,-1
+  500 00400a60 2108ffff		addi	$t0,$t0,-1
+  501 					addi	$t1,16	#move the point ahead by 16 bytes next complex
+  501 00400a64 21290010		addi	$t1,$t1,16
+  502 00400a68 08100292			j	1b
+  503                   
+  504                   Finished_Conjugating:
+  505 00400a6c 0c100145			jal	complex.Cooley_Tukey_FFT	#forward FFT
+  506                   	
+  507 00400a70 0c100016			jal	printalldata
+  508                   	
+  509                   
+  510                   
+  511                   
+  512                   
+  513                   98:	
+  514                   
+  515                   	
+  516 00400a74 8fdf0004		lw	$ra,fp.ra($fp)	# restore registers from stacksese
+  517 00400a78 8fd0fffc		lw	$s0,fp.s0($fp)
+  518 00400a7c 8fd1fff8		lw	$s1,fp.s1($fp)
+  519 00400a80 8fd2fff4		lw	$s2,fp.s2($fp)
+  520 00400a84 8fd3fff0		lw	$s3,fp.s3($fp)
+  521 00400a88 8fd4ffec		lw	$s4,fp.s4($fp)
+  522 00400a8c 8fde0000		lw	$fp,fp.fp($fp)
+  523 00400a90 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  524 00400a94 03e00008		jr	$ra
+   73 				.include	"fileio.asm"
+    1 				.data
+    2                   
+    3 100103f0 00000000	pointer:	.double	0
+    4                   
+    5 100103f8 00000000	onevalbuffer:	.word	0
+    6 100103fc 00000000			.word	0
+    7                   # 	.align	8
+    8          00000002	_O_RDWR: 	= 0x0002
+    9          00000000	_O_RDONLY:	= 0x0000
+   10          00004000	_O_TEXT: 	= 0x4000
+   11                   	
+   12 10010400 20756f59	readerrorhandelign:	.asciiz	"You failed to read the file somehow"
+   13                   	
+   14 10010424 00000000	filehandle:	.word	0
+   15 					.data
+   16          00000004	file:		.struct	
+   17          00000000	readhead:	.word	0
+   18 				.data
+   19 10010428 61746144	file.name:	.asciiz	"Data.txt"
+   20                   	
+   21 10010431 7074756f	file.output:	.asciiz	"output.txt"
+   22                   
+   23          00000003	console.int	=	3
+   24          a0000018	console:	.struct	0xa0000010
+   25          a0000010	flags:	.byte	0
+   26          a0000011	mask:	.byte	0
+   27          a0000012		.half	0
+   28          a0000014	char:	.byte	0
+   29          a0000015	col:	.byte	0
+   30          a0000016	row:	.byte	2
+   31          a0000017	con:	.byte	0
+   32                   
+   33 				.data
+   34 1001043c 00000000	writebuffer:	.word	0,0
+   35                   
+   36                   
+   37 				.code
+   38                   
+   39                   
+   40                   
+   41                   
+   42                   file.readfile:
+   43                   
+   44 00400a98 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   45 00400a9c afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+   46 00400aa0 23be0014		add	$fp,$sp,fp.fp-fp.s4
+   47 00400aa4 afdf0004		sw	$ra,fp.ra($fp)
+   48 00400aa8 afd0fffc		sw	$s0,fp.s0($fp)
+   49 00400aac afd1fff8		sw	$s1,fp.s1($fp)
+   50 00400ab0 afd2fff4		sw	$s2,fp.s2($fp)
+   51 00400ab4 afd3fff0		sw	$s3,fp.s3($fp)
+   52 00400ab8 afd4ffec		sw	$s4,fp.s4($fp)
+   53 00400abc afc40008		sw	$a0,fp.a0($fp)
+   54 00400ac0 afc5000c		sw	$a1,fp.a1($fp)
+   55 00400ac4 afc60010		sw	$a2,fp.a2($fp)
+   56 00400ac8 afc70014		sw	$a3,fp.a3($fp)
+   57                   	
+   58                   	
+   59 				la	$a0,file.name
+   59 00400acc 3c041001		lui	$a0,0x1001
+   59 00400ad0 34840428		ori	$a0,$a0,0x428
+   60 				addi	$a1,_O_RDONLY|_O_TEXT
+   60 00400ad4 20a54000		addi	$a1,$a1,_O_RDONLY|_O_TEXT
+   61 00400ad8 0000034c		syscall	$open
+   62 				sw	$v0,filehandle
+   62 00400adc 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+   62 00400ae0 ac220424		sw	$v0,filehandle&0xFFFF($at)
+   63                   
+   64                   
+   65                   		#bunch ofmacros that include load immdeiates if oyu put a constant in an load immediate or in a macro that 
+   66                   	#gets subustited with a load imaediate there fore the value has to be knowne before you invoke a macro
+   67                   	#use to do less aggreseiv ethigns in teh macros 
+   68                   	#
+   69                   
+   70 				li	$t0,'\n
+   70 00400ae4 3408000a		ori	$t0,$0,0x0A
+   71 				la	$a1,onevalbuffer
+   71 00400ae8 3c051001		lui	$a1,0x1001
+   71 00400aec 34a503f8		ori	$a1,$a1,0x3F8
+   72                   
+   73 00400af0 00402021		mov	$a0,$v0
+   74 				li	$a2,1
+   74 00400af4 34060001		ori	$a2,$0,0x01
+   75                   
+   76                   	
+   77                   1:	
+   78 				lw	$a0,filehandle
+   78 00400af8 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+   78 00400afc 8c240424		lw	$a0,filehandle&0xFFFF($at)	
+   79 00400b00 0000038c		syscall	$read
+   80 00400b04 80aa0000		lb	$t2,($a1)
+   81 00400b08 01402021		mov	$a0,$t2
+   82 00400b0c 000002cc		syscall	$print_char
+   83 				addi	$a1,1
+   83 00400b10 20a50001		addi	$a1,$a1,1
+   84 00400b14 150afff8		bne	$t0,$t2,1b
+   85                   
+   86 				li	$t0,'\0
+   86 00400b18 34080000		ori	$t0,$0,0x00
+   87 00400b1c a0a80000		sb	$t0,($a1)
+   88 				la	$a0,onevalbuffer
+   88 00400b20 3c041001		lui	$a0,0x1001
+   88 00400b24 348403f8		ori	$a0,$a0,0x3F8
+   89 00400b28 0000078c		syscall	$string2double
+   90 00400b2c 46200306		mov.d	$f12,$f0
+   91 00400b30 000000cc		syscall	$print_double
+   92 00400b34 46200024		cvt.w.d	$f0,$f0
+   93 00400b38 44080000		mfc1	$t0,$f0
+   94 				sw	$t0,m
+   94 00400b3c 3c011001		lui	$at,m&0x8000<<1+m>>16
+   94 00400b40 ac2801a0		sw	$t0,m&0xFFFF($at)
+   95                   
+   96 				lw	$a0,m
+   96 00400b44 3c011001		lui	$at,m&0x8000<<1+m>>16
+   96 00400b48 8c2401a0		lw	$a0,m&0xFFFF($at)	
+   97 00400b4c 0000004c		syscall	$print_int
+   98                   
+   99                   	#const truct N which is 2^m
+  100 				lw	$t0,m
+  100 00400b50 3c011001		lui	$at,m&0x8000<<1+m>>16
+  100 00400b54 8c2801a0		lw	$t0,m&0xFFFF($at)	
+  101 				li	$t1,1
+  101 00400b58 34090001		ori	$t1,$0,0x01
+  102 				li	$t2,2
+  102 00400b5c 340a0002		ori	$t2,$0,0x02
+  103 00400b60 11000004	1:	beqz	$t0,finishpow2
+  104 				addi	$t0,-1
+  104 00400b64 2108ffff		addi	$t0,$t0,-1
+  105 				mul	$t1,$t1,$t2
+  105 00400b68 012a0018		mult	$t1,$t2
+  105 00400b6c 00004812		mflo	$t1
+  106 00400b70 081002d8		j	1b
+  107                   	
+  108                   finishpow2:	
+  109                   		#setting N and Nfloat
+  110 					sw	$t1,N
+  110 00400b74 3c011001		lui	$at,N&0x8000<<1+N>>16
+  110 00400b78 ac290168		sw	$t1,N&0xFFFF($at)
+  111 00400b7c 44890000			mtc1	$t1,$f0
+  112 00400b80 46800021			cvt.d.w	$f0,$f0
+  113 					s.d	$f0,Nfloat
+  113 00400b84 3c011001		lui	$at,Nfloat&0x8000<<1+Nfloat>>16
+  113 00400b88 e4200160		swc1	$f0,Nfloat&0xFFFF($at)
+  113 00400b8c e4210164		swc1	$f0+1,Nfloat&0xFFFF+4($at)
+  114                   
+  115                   
+  116 					li	$t2,16	#num of bytes in each 
+  116 00400b90 340a0010		ori	$t2,$0,0x10
+  117 					mul	$a0,$t1,16
+  117 				li	$at,16
+  117 00400b94 34010010		ori	$at,$0,0x10
+  117 00400b98 01210018		mult	$t1,$at
+  117 00400b9c 00002012		mflo	$a0
+  118 00400ba0 0000024c			syscall	$malloc	#get the malloc 
+  119 					la	$t9,Data
+  119 00400ba4 3c191001		lui	$t9,0x1001
+  119 00400ba8 3739012c		ori	$t9,$t9,0x12C
+  120 					sw	$v0,Data
+  120 00400bac 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  120 00400bb0 ac22012c		sw	$v0,Data&0xFFFF($at)
+  121                   
+  122                   	#Going to start reading the elements rom the file.
+  123 					lw	$t1,N	#loop counter only doing this 16 times
+  123 00400bb4 3c011001		lui	$at,N&0x8000<<1+N>>16
+  123 00400bb8 8c290168		lw	$t1,N&0xFFFF($at)	
+  124                   # 		addi	$t1,1
+  125 					lw	$t8,Data
+  125 00400bbc 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  125 00400bc0 8c38012c		lw	$t8,Data&0xFFFF($at)	
+  126                   		
+  127                   
+  128                   
+  129                   
+  130                   # 	addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  131                   # 	sw	$fp,fp.fp-fp.s4($sp)
+  132                   # 	add	$fp,$sp,fp.fp-fp.s4
+  133                   # 
+  134                   # 	sw	$s0,fp.s0($fp)
+  135                   # 	sw	$s1,fp.s1($fp)
+  136                   # 	sw	$s2,fp.s2($fp)
+  137                   # 	sw	$s3,fp.s3($fp)
+  138                   # 	sw	$s4,fp.s4($fp)
+  139                   # 	sw	$a0,fp.a0($fp)
+  140                   # 	sw	$a1,fp.a1($fp)
+  141                   # 	sw	$a2,fp.a2($fp)
+  142                   # 	sw	$a3,fp.a3($fp)
+  143                   
+  144                   
+  145                   
+  146 			`	lw	$t8,Data
+  146 00400bc4 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  146 00400bc8 8c38012c		lw	$t8,Data&0xFFFF($at)	
+  147                   
+  148 				lw	$t0,N
+  148 00400bcc 3c011001		lui	$at,N&0x8000<<1+N>>16
+  148 00400bd0 8c280168		lw	$t0,N&0xFFFF($at)	
+  149 				li	$t2,16
+  149 00400bd4 340a0010		ori	$t2,$0,0x10
+  150 				mul	$t0,$t0,$t2	#N*2 16*2 32 times I have to zerout
+  150 00400bd8 010a0018		mult	$t0,$t2
+  150 00400bdc 00004012		mflo	$t0
+  151                   
+  152 00400be0 11000006	1:	beqz	$t0,doneclear
+  153                   
+  154 00400be4 af000000		sw	$0,($t8)
+  155 00400be8 03002021		mov	$a0,$t8
+  156 00400bec 0000004c		syscall	$print_int
+  157 				addi	$t8,4
+  157 00400bf0 23180004		addi	$t8,$t8,4
+  158 				addi	$t0,-1
+  158 00400bf4 2108ffff		addi	$t0,$t0,-1
+  159 00400bf8 081002f8		j	1b
+  160                   
+  161                   
+  162                   # doneclear:	lw	$s0,fp.s0($fp)
+  163                   # 	lw	$s1,fp.s1($fp)
+  164                   # 	lw	$s2,fp.s2($fp)
+  165                   # 	lw	$s3,fp.s3($fp)
+  166                   # 	lw	$s4,fp.s4($fp)
+  167                   # 	lw	$fp,fp.fp($fp)
+  168                   # 	add	$sp,$sp,fp.a4-fp.s4
+  169                   
+  170                   doneclear:
+  171 				lw	$t8,Data
+  171 00400bfc 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  171 00400c00 8c38012c		lw	$t8,Data&0xFFFF($at)	
+  172                   
+  173                   
+  174 00400c04 0c100016		jal	printalldata
+  175                   
+  176                   
+  177                   
+  178                   
+  179                   
+  180                   
+  181                   
+  182                   
+  183 					li	$t4,'\n			#will use this to check end of num
+  183 00400c08 340c000a		ori	$t4,$0,0x0A
+  184                   	
+  185 					la	$a1,onevalbuffer# WRITING TO THIS BUFFER
+  185 00400c0c 3c051001		lui	$a1,0x1001
+  185 00400c10 34a503f8		ori	$a1,$a1,0x3F8
+  186                   	
+  187                   
+  188                   
+  189                   
+  190                   
+  191                   		
+  192 00400c14 19200022	1:		blez	$t1,DoneReading
+  193                   		
+  194                   		
+  195 					li	$a2,1	#number bytes im reading each time
+  195 00400c18 34060001		ori	$a2,$0,0x01
+  196 					lw	$a0,filehandle
+  196 00400c1c 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+  196 00400c20 8c240424		lw	$a0,filehandle&0xFFFF($at)	
+  197 00400c24 0000038c			syscall	$read
+  198 00400c28 10400015			beqz	$v0,LastConv
+  199                   
+  200                   
+  201                   	
+  202                   
+  203 00400c2c 80a40000			lb	$a0,($a1)
+  204 					addi	$a1,1	#load the next byte
+  204 00400c30 20a50001		addi	$a1,$a1,1
+  205 00400c34 000002cc			syscall	$print_char
+  206 00400c38 1584fff6			bne	$t4,$a0,1b	#CHECK if end of line char found than convert			
+  207                   
+  208                   
+  209                   convert_storeDataFFT:	
+  210 						li	$t9,'\0
+  210 00400c3c 34190000		ori	$t9,$0,0x00
+  211 00400c40 a0b90000				sb	$t9,($a1)
+  212 						li	$a0,'\n
+  212 00400c44 3404000a		ori	$a0,$0,0x0A
+  213 00400c48 000002cc				syscall	$print_char
+  214                   
+  215 						la	$a0,onevalbuffer
+  215 00400c4c 3c041001		lui	$a0,0x1001
+  215 00400c50 348403f8		ori	$a0,$a0,0x3F8
+  216 00400c54 0000010c				syscall	$print_string
+  217 						li	$s5,'\0
+  217 00400c58 34150000		ori	$s5,$0,0x00
+  218 00400c5c a0b5ffff				sb	$s5,-1($a1)
+  219 						addi	$t1,-1
+  219 00400c60 2129ffff		addi	$t1,$t1,-1
+  220 00400c64 0000078c				syscall	$string2double
+  221 						s.d	$f0,($t8)
+  221 00400c68 e7000000		swc1	$f0,0($t8)
+  221 00400c6c e7010004		swc1	$f0+1,0+4($t8)
+  222 						addi	$t8,16
+  222 00400c70 23180010		addi	$t8,$t8,16
+  223 						la	$a1,onevalbuffer
+  223 00400c74 3c051001		lui	$a1,0x1001
+  223 00400c78 34a503f8		ori	$a1,$a1,0x3F8
+  224                   
+  225                   
+  226                   
+  227 00400c7c 08100305				j	1b
+  228                   
+  229                   
+  230                   
+  231                   
+  232                   
+  233                   
+  234                   
+  235                   
+  236                   LastConv:	
+  237 					addi	$a1,1	#load the next byte
+  237 00400c80 20a50001		addi	$a1,$a1,1
+  238 					li	$t9,'\0
+  238 00400c84 34190000		ori	$t9,$0,0x00
+  239 00400c88 a0b90000			sb	$t9,($a1)
+  240                   
+  241 					la	$a0,onevalbuffer
+  241 00400c8c 3c041001		lui	$a0,0x1001
+  241 00400c90 348403f8		ori	$a0,$a0,0x3F8
+  242 00400c94 0000078c			syscall	$string2double
+  243 					s.d	$f0,($t8)		
+  243 00400c98 e7000000		swc1	$f0,0($t8)
+  243 00400c9c e7010004		swc1	$f0+1,0+4($t8)
+  244                   	
+  245                   			
+  246                   		
+  247 			DoneReading:		lw	$a0,filehandle
+  247 00400ca0 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+  247 00400ca4 8c240424		lw	$a0,filehandle&0xFFFF($at)	
+  248 00400ca8 00808021				mov	$s0,$a0
+  249                   			
+  250 00400cac 0000040c				syscall	$close
+  251 00400cb0 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  252 00400cb4 8fd0fffc		lw	$s0,fp.s0($fp)
+  253 00400cb8 8fd1fff8		lw	$s1,fp.s1($fp)
+  254 00400cbc 8fd2fff4		lw	$s2,fp.s2($fp)
+  255 00400cc0 8fd3fff0		lw	$s3,fp.s3($fp)
+  256 00400cc4 8fd4ffec		lw	$s4,fp.s4($fp)
+  257 00400cc8 8fde0000		lw	$fp,fp.fp($fp)
+  258 00400ccc 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  259 00400cd0 03e00008		jr	$ra
+  260                   
+  261                   
+  262                   # have to loook at magnitude of it first off sign is completley indpdent
+  263                   # the have to mulitply it by powers of two  if the number is bigger than 
+  264                   file.writeData:
+  265 00400cd4 23bdffd4		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  266 00400cd8 afbe0014		sw	$fp,fp.fp-fp.s4($sp)
+  267 00400cdc 23be0014		add	$fp,$sp,fp.fp-fp.s4
+  268 00400ce0 afdf0004		sw	$ra,fp.ra($fp)
+  269 00400ce4 afd0fffc		sw	$s0,fp.s0($fp)
+  270 00400ce8 afd1fff8		sw	$s1,fp.s1($fp)
+  271 00400cec afd2fff4		sw	$s2,fp.s2($fp)
+  272 00400cf0 afd3fff0		sw	$s3,fp.s3($fp)
+  273 00400cf4 afd4ffec		sw	$s4,fp.s4($fp)
+  274 00400cf8 afc40008		sw	$a0,fp.a0($fp)
+  275 00400cfc afc5000c		sw	$a1,fp.a1($fp)
+  276 00400d00 afc60010		sw	$a2,fp.a2($fp)
+  277 00400d04 afc70014		sw	$a3,fp.a3($fp)
+  278                   
+  279                   
+  280                   	#open the output file
+  281 				la	$a0,file.output
+  281 00400d08 3c041001		lui	$a0,0x1001
+  281 00400d0c 34840431		ori	$a0,$a0,0x431
+  282 00400d10 20054002		addi	$a1,$0,_O_RDWR|_O_TEXT
+  283 00400d14 0000034c		syscall	$open
+  284 00400d18 00402021		mov	$a0,$v0	#file handle
+  285 				sw	$v0,filehandle
+  285 00400d1c 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+  285 00400d20 ac220424		sw	$v0,filehandle&0xFFFF($at)
+  286                   
+  287                   
+  288                   
+  289                   
+  290                   
+  291                   
+  292 				lw	$t0,Data
+  292 00400d24 3c011001		lui	$at,Data&0x8000<<1+Data>>16
+  292 00400d28 8c28012c		lw	$t0,Data&0xFFFF($at)	
+  293 				lw	$s7,N
+  293 00400d2c 3c011001		lui	$at,N&0x8000<<1+N>>16
+  293 00400d30 8c370168		lw	$s7,N&0xFFFF($at)	
+  294                   
+  295                   Start:
+  296 				li	$a0,0	#column
+  296 00400d34 34040000		ori	$a0,$0,0x00
+  297 				li	$a1,0	#rowwer
+  297 00400d38 34050000		ori	$a1,$0,0x00
+  298 00400d3c 0000050c		syscall	$xy
+  299 				li	$a0,SPACE
+  299 00400d40 3c041001		lui	$a0,0x1001
+  299 00400d44 3484000a		ori	$a0,$a0,0x0A
+  300 00400d48 0000010c		syscall	$print_string
+  301 				li	$a0,0	#column
+  301 00400d4c 34040000		ori	$a0,$0,0x00
+  302 				li	$a1,0	#rowwer
+  302 00400d50 34050000		ori	$a1,$0,0x00
+  303 00400d54 0000050c		syscall	$xy
+  304                   
+  305                   
+  306                   
+  307                   
+  308                   
+  309 				li	$s4,0
+  309 00400d58 34140000		ori	$s4,$0,0x00
+  310 				la	$t7,writebuffer
+  310 00400d5c 3c0f1001		lui	$t7,0x1001
+  310 00400d60 35ef043c		ori	$t7,$t7,0x43C
+  311                   
+  312                   
+  313                   
+  314 				l.d	$f12,($t0)
+  314 00400d64 c50c0000		lwc1	$f12,0($t0)
+  314 00400d68 c50d0004		lwc1	$f12+1,0+4($t0)
+  315 00400d6c 4620632c		round.d	$f12,$f12
+  316 00400d70 000000cc		syscall	$print_double
+  317                   
+  318 				l.d	$f12,complex.imaginary($t0)
+  318 00400d74 c50c0008		lwc1	$f12,complex.imaginary($t0)
+  318 00400d78 c50d000c		lwc1	$f12+1,complex.imaginary+4($t0)
+  319 00400d7c 4620632c		round.d	$f12,$f12	
+  320 00400d80 44800000		mtc1	$0,$f0
+  321 00400d84 44800800		mtc1	$0,$f1
+  322 00400d88 4620603c		c.lt.d	$f12,$f0
+  323 00400d8c 45000004		bc1f	addplus
+  324                   
+  325                   	
+  326 00400d90 000000cc		syscall	$print_double	#if negative dont care about sign its auto printed
+  327 				li	$a0,'j
+  327 00400d94 3404006a		ori	$a0,$0,0x6A
+  328 00400d98 000002cc		syscall	$print_char
+  329 00400d9c 0810036d		j	sentry
+  330                   
+  331                   addplus:
+  332 				li	$a0,'+
+  332 00400da0 3404002b		ori	$a0,$0,0x2B
+  333 00400da4 000002cc		syscall	$print_char
+  334                   # 	abs.d	$f12,$f12
+  335 00400da8 000000cc		syscall	$print_double
+  336 				li	$a0,'j
+  336 00400dac 3404006a		ori	$a0,$0,0x6A
+  337 00400db0 000002cc		syscall	$print_char	
+  338                   
+  339                   
+  340 			sentry:	la	$t9,writebuffer
+  340 00400db4 3c191001		lui	$t9,0x1001
+  340 00400db8 3739043c		ori	$t9,$t9,0x43C
+  341 				addi	$t9,-1
+  341 00400dbc 2339ffff		addi	$t9,$t9,-1
+  342                   	
+  343 				li	$t8,' 
+  343 00400dc0 34180020		ori	$t8,$0,0x20
+  344 				li	$a0,-1
+  344 00400dc4 2004ffff		addi	$a0,$0,0xFFFF
+  345 				li	$a1,0
+  345 00400dc8 34050000		ori	$a1,$0,0x00
+  346                   
+  347 			keepreading:	addi	$a0,1
+  347 00400dcc 20840001		addi	$a0,$a0,1
+  348 					addi	$t9,1
+  348 00400dd0 23390001		addi	$t9,$t9,1
+  349 00400dd4 0000050c			syscall	$xy
+  350 					addi	$s4,1
+  350 00400dd8 22940001		addi	$s4,$s4,1
+  351 00400ddc a3220000			sb	$v0,($t9)
+  352 00400de0 1458fffa			bne	$v0,$t8,keepreading
+  353                   
+  354 				li	$s2,'\n
+  354 00400de4 3412000a		ori	$s2,$0,0x0A
+  355 00400de8 a3320000		sb	$s2,($t9)
+  356                   
+  357                   time_to_write:
+  358 				lw	$a0,filehandle
+  358 00400dec 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+  358 00400df0 8c240424		lw	$a0,filehandle&0xFFFF($at)	
+  359 				la	$a1,writebuffer
+  359 00400df4 3c051001		lui	$a1,0x1001
+  359 00400df8 34a5043c		ori	$a1,$a1,0x43C
+  360 00400dfc 02803021		mov	$a2,$s4
+  361 00400e00 000003cc		syscall	$write
+  362                   	
+  363 				addi	$s7,-1
+  363 00400e04 22f7ffff		addi	$s7,$s7,-1
+  364 				addi	$t0,16
+  364 00400e08 21080010		addi	$t0,$t0,16
+  365 00400e0c 16e0ffc9		bnez	$s7,Start
+  366                   	
+  367                   	
+  368                   	# also create write data with phasor notaiton 
+  369                   
+  370                   end:
+  371 				lw	$a0,filehandle
+  371 00400e10 3c011001		lui	$at,filehandle&0x8000<<1+filehandle>>16
+  371 00400e14 8c240424		lw	$a0,filehandle&0xFFFF($at)	
+  372 00400e18 0000040c		syscall	$close
+  373                   
+  374 00400e1c 8fdf0004	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  375 00400e20 8fd0fffc		lw	$s0,fp.s0($fp)
+  376 00400e24 8fd1fff8		lw	$s1,fp.s1($fp)
+  377 00400e28 8fd2fff4		lw	$s2,fp.s2($fp)
+  378 00400e2c 8fd3fff0		lw	$s3,fp.s3($fp)
+  379 00400e30 8fd4ffec		lw	$s4,fp.s4($fp)
+  380 00400e34 8fde0000		lw	$fp,fp.fp($fp)
+  381 00400e38 23bd002c		add	$sp,$sp,fp.a4-fp.s4
+  382 00400e3c 03e00008		jr	$ra
+  383                   
+  384                   	
+  385                   
+  386                   # 	.data
+  387                   # 
+  388                   # comparisontable:	.double	1.0e-100,1.0e-10,1.0e-1,1.0,10.0,1.0e10,1.0e100
+   74                   
+   75 				.data
+   76                   
+   77                   
+   78 				.code
+   79                   
+   80                   
+   81 00400e40         	main:	.globl	main
+   82 00400e40 0c1002a6		jal	file.readfile
+   83                   
+   84                   	
+   85 				li	$a0,'\n
+   85 00400e44 3404000a		ori	$a0,$0,0x0A
+   86 00400e48 000002cc		syscall	$print_char
+   87 00400e4c 0c100016		jal	printalldata
+   88                   
+   89                   	
+   90 00400e50 0c100145		jal	complex.Cooley_Tukey_FFT
+   91                   
+   92 				li	$a0,'\n
+   92 00400e54 3404000a		ori	$a0,$0,0x0A
+   93 00400e58 000002cc		syscall	$print_char
+   94 00400e5c 0c100016		jal	printalldata	
+   95 00400e60 0c100335		jal	file.writeData
+   96                   	
+   97                   
+   98 00400e64 0000028c		syscall	$exit
+			
