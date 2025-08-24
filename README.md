@@ -1,5 +1,8 @@
-# FFT implementation in Mipsym Done by Gurjot Singh under advisement of Doctor Roger E Doering
+# FFT implementation in Mipsym 
+# Done by Gurjot Singh under advisement of Doctor Roger E Doering
+# Important citation for writing the original C++ code that I translated to Dr. Yi-Hsiu Chen at Harvard University
 The FFT algorithm decomposes a signal transform it from time domain to the frequency domain allowing for further analysis. Thereby allowing for 
+
 | Useful Processes: | 
 |---:|
 | Noise Reduction:  | 
