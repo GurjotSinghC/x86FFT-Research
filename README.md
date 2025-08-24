@@ -10,7 +10,9 @@
 ### Work Credit
 * Dr. Roger Doering without whose guidance this project wouldn't be possible and helped write the complex math operators +,-,divide and multiply and assisted in C++
 
-* I Gurjot Singh wrote the entire FFT algo translated the FFT Algorithm from the C++ code of Dr Chen 
+* I Gurjot Singh wrote the entire FFT algo translated the FFT Algorithm from the C++ code of Dr Chen
+* I finally also wish to thank my lab peers who worked alongside me this summer working on differnt projects with Dr Doering
+* Jewel Hickman, Sukhpinder Singh
 
 
 
