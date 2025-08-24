@@ -8,8 +8,9 @@
 *  Please support his book if possible I make no money from you clicking on the Amazon link and I am not paid by Mr. James for promoting his book. As well we have never met
 *  https://www.amazon.com/Students-Guide-Fourier-Transforms-Applications/dp/0521176832
 ### Work Credit
-Dr. Roger Doering without whose guidance this project wouldn't be possible and helped write the complex math operators +,-,divide and multiply and assisted in C++
-I Gurjot Singh wrote the entire FFT algo translated the FFT Algorithm from the C++ code of Dr Chen 
+* Dr. Roger Doering without whose guidance this project wouldn't be possible and helped write the complex math operators +,-,divide and multiply and assisted in C++
+
+* I Gurjot Singh wrote the entire FFT algo translated the FFT Algorithm from the C++ code of Dr Chen 
 
 
 
