@@ -1,0 +1,6 @@
+
+Program Run: Main.obj
+Return Value: 0
+Instructions Run: 29822
+Elapsed Time: 0.483 sec
+Instructions Per Second: 61743.3

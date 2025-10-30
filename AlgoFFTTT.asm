@@ -1,0 +1,591 @@
+	.data
+aandb:	.asciiz	"This is a and b  "
+thisk:	.asciiz	"This is k "
+# 	.align	8
+
+	.include	"fixedops.asm"
+
+
+	.data
+decimationtable:	.word	0xaaaaaaaa
+			.word	0x55555555
+			.word	0xcccccccc
+			.word	0x33333333
+			.word	0xf0f0f0f0
+			.word	0x0f0f0f0f
+			.word	0xff00ff00
+			.word	0x00ff00ff
+
+PHI:	.double	1.0,0.0			# 360  	N=0
+	.double	-1.0,0.0		# -180 	N=1
+	.double	0.0,-1.0		# -90 	N=2
+	.double	0.7071067811865476,-0.7071067811865475 	#-45 	N=3
+	.double	0.9238795325112867,-0.3826834323650898	#-22.5 	N=4
+	.double	0.9807852804032304,-0.19509032201612825 #-11.25 
+	.double	0.9951847266721969,-0.0980171403295606
+	.double	0.9987954562051724,-0.04906767432741801
+	.double	0.9996988186962042,-0.02454122852291229
+	.double	0.9999247018391445,-0.01227153828571993
+	.double	0.9999811752826011,-6.135884649154475e-3
+	.double	0.9999952938095762,-3.067956762965976e-3
+	.double	0.9999988234517019,-1.5339801862847655e-3
+	.double	0.9999997058628822,-7.669903187427044e-4
+	.double	0.9999999264657179,-3.8349518757139553e-4
+	.double	0.9999999816164293,-1.9174759731070328e-4
+	.double	0.9999999954041073,-9.587379909597734e-5
+	.double 0.9999999988510269,-4.793689960306688e-5
+	.double	0.9999999997127567,-2.3968449808418217e-5
+	.double	0.9999999999281892,-1.1984224905069705e-5
+	.double	0.9999999999820472,-5.992112452642428e-6
+
+
+
+
+
+
+
+
+	.code
+
+
+
+complex.Cooley_Tukey_FFT:	
+
+		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+		sw	$fp,fp.fp-fp.s4($sp)
+		add	$fp,$sp,fp.fp-fp.s4
+		sw	$ra,fp.ra($fp)
+		sw	$s0,fp.s0($fp)
+		sw	$s1,fp.s1($fp)
+		sw	$s2,fp.s2($fp)
+		sw	$s3,fp.s3($fp)
+		sw	$s4,fp.s4($fp)
+		sw	$a0,fp.a0($fp)
+		sw	$a1,fp.a1($fp)
+		sw	$a2,fp.a2($fp)
+		sw	$a3,fp.a3($fp)				
+
+
+
+
+
+
+# void fft(CArray &x,unsigned int m)
+					# {
+					#     // DFT
+	#     unsigned int N = x.size(), k = N, n;
+		lw	$t0,N		# N = size
+		mov	$t1,$t0		# k = N
+		li	$t2,0		#n = 0	
+					# double thetaT = PI / N; // division done in Long double output into double
+	 	l.d	$f0,PI
+	 	l.d	$f2,Nfloat	
+	 	div.d	$f4,$f0,$f2
+	 	s.d	$f4,ThetaT
+	 				#Complex phiT = Complex(cos(thetaT), -sin(thetaT)), T;	
+	 	#f4 has thetaT	
+	 	cos.d	$f6,$f4
+	 	sin.d	$f8,$f4
+	 	neg.d	$f8,$f8
+	 	s.d	$f6,phiT
+	 	la	$t9,phiT
+	 	s.d	$f8,8($t9)	#basically storing to the double next phiT in memory
+	
+	
+	
+		lw	$t8,m
+			
+		
+	
+	
+		li	$a0,'\n
+		syscall	$print_char
+		li	$a0,'\n
+		syscall	$print_char
+		la	$a0,firstphit
+		syscall	$print_string	
+		l.d	$f12,phiT
+		syscall	$print_double
+		l.d	$f12,8($t9)
+		syscall	$print_double
+		#t9 is now phiT address
+
+	
+
+
+
+				#     while (k > 1)
+				#     {
+		li	$t6,1
+top:		bgt	$t6,$t1,whileend
+		beq	$t6,$t1,whileend
+			#      n = k;
+		mov	$t2,$t1
+				#      k >>= 1;
+		srl	$t1,$t1,1
+		li	$a0,'\n
+		syscall	$print_char
+		la	$a0,thisk
+		syscall	$print_string
+		mov	$a0,$t1
+		syscall	$print_int
+
+				#      phiT = phiT * phiT;
+		la	$v0,phiT  		#output stored here
+# 		addi	$v0,72
+		la	$a0,phiT
+		la	$a1,phiT
+	
+	
+		jal	complex.mul #phiTmul
+# 	
+		li		$a0,'\n	#this is the debug string to view the first phit calc
+		syscall		$print_char
+		la		$a0,firstph2
+		syscall		$print_string
+	
+		l.d		$f12,phiT	#prints real value of phit
+		syscall		$print_double
+	
+	
+		la		$a0,SPACE
+		syscall		$print_string
+	
+	
+		la		$a0,phiT	#prints the imaginary v alue of phit
+		l.d		$f12,8($a0)
+		syscall		$print_double
+	
+		li		$a3,1
+		mtc1		$a3,$f0
+		cvt.d.w		$f0,$f0
+		la		$a3,T
+		s.d		$f0,complex.real($a3)
+		
+		mtc1		$0,$f0
+		mtc1		$0,$f1
+		cvt.d.w		$f0,$f0
+		s.d		$f0,complex.imaginary($a3)
+	
+		li		$t9,0 #l =0				
+tloop:				#         for (unsigned int l = 0; l < k; l++)
+	
+		bge		$t9,$t1,tloopend	
+				#         {floop
+				#             for (unsigned int a = l; a < N; a += n)
+		mov		$t8,$t9	#a = l
+sloop:	bge		$t8,$t0,sloopend
+					#             
+					# 	unsigned int b = a + k;
+	add			$t3,$t8,$t1	# Complex t = x[a] - x[b];
+	lw			$t7,Data 		#array
+
+
+
+	#DEBUG strins to print and b
+	li			$a0,'\n
+	syscall			$print_char
+	la			$a0,aandb
+	syscall			$print_string
+	mov			$a0,$t8
+	syscall			$print_int
+	la			$a0,SPACE
+	syscall			$print_string
+	mov			$a0,$t3
+	syscall			$print_int
+	#Debug strgins to end and b
+	li			$s1,16
+	mul			$a0,$t8,$s1
+
+	add			$a0,$t7,$a0 #x[a]	
+
+	mul			$s0,$t3,$s1	# multily b by 16
+	
+
+
+	
+	add			$a1,$t7,$s0
+
+	la			$v0,t	#need to know the address of the output	
+	jal			complex.sub #cahnged from mul	
+
+
+
+	li			$a0,'\n		#this is t printing
+	syscall			$print_char
+	la			$a0,compsub
+	syscall			$print_string
+	l.d			$f12,t
+	syscall			$print_double
+	la			$a0,SPACE
+	syscall			$print_string
+	la			$s5,t
+	l.d			$f12,8($s5)
+	syscall			$print_double
+
+	
+			#                 x[a] += x[b];
+	mov			$s0,$t8	#t8 is a
+	li			$s1,16
+	mul			$s0,$s0,$s1 #byte index a
+	add			$a0,$t7,$s0 #x[a]
+	mov			$v0,$a0	#fixes
+	mov			$s0,$t3	#b
+	mul			$s0,$s0,$s1	# multily b by 16
+	add			$a1,$t7,$s0
+
+	jal			complex.add
+	
+
+# 	li	$a0,'\n
+# 	syscall	$print_char
+	
+	la			$a0,compadd
+	syscall			$print_string
+# 
+	l.d			$f12,complex.real($v0)
+ 	syscall			$print_double
+
+	la			$a0,SPACE
+	syscall			$print_string
+	l.d			$f12,complex.imaginary($v0)
+	syscall			$print_double
+
+
+			#                 x[b] = t * T;
+	mov			$s0,$t3	#b
+	mul			$s0,$s0,$s1	# multily b by 16
+	add			$v0,$s0,$t7
+
+	la			$a0,t
+	la			$a1,T
+	jal			complex.mul
+
+	li			$a0,'\n
+	syscall		$print_char
+	la			$a0,tandt
+	syscall		$print_string
+
+
+	l.d			$f12,($v0)
+	syscall		$print_double
+	la			$a0,SPACE
+	syscall		$print_string
+	l.d			$f12,8($v0)
+	syscall		$print_double
+	li			$a0,'\n
+	syscall		$print_char
+	add			$t8,$t8,$t2 #a+=n
+	j			sloop
+sloopend:	#             }sloop
+						#             T *= phiT;
+	la			$a0,T
+	la			$a1,phiT
+	la			$v0,T
+
+	jal			complex.mul
+
+	addi			$t9,1
+	la			$a0,TtT
+	syscall		$print_string
+	
+	l.d			$f12,complex.real($v0)
+	syscall		$print_double
+
+	la			$a0,SPACE
+	syscall		$print_string
+
+	l.d			$f12,complex.imaginary($v0)
+	syscall		$print_double	
+
+	j			tloop			#         }floop
+
+tloopend:
+	j			top
+
+#end of while lop
+	
+				#     }while
+whileend:
+	jal			printalldata
+	la			$s6,decimationtable
+
+				#     // Decimate
+				#     //    unsigned int m = (unsigned int)log2(N);
+			#     
+	li			$t8,0 #a=0				#{
+	lw			$s7,N
+# 	li			$a0,'V
+# 	syscall		$print_char
+	l.d			$f12,phiT
+	syscall		$print_double
+
+
+
+	#t8 = a
+	#s7 = N
+
+	lw	$t7,Data
+	la			$s6,decimationtable
+	li	$t8,0	#debug here	This is the i for the for loop
+Decimate:
+bga:
+
+
+
+
+
+# 	jal			printalldata  #breakpointhere
+
+	#while N>a
+	bge			$t8,$s7,FinishDecimate	#     for (unsigned int a = 0; a < N; a++)
+
+
+
+
+
+				#         unsigned int b = a;
+	mov			$t3,$t8
+				#         // Reverse bits
+				#         b = (((b & 0xaaaaaaaa) >> 1) | ((b & 0x55555555) << 1));
+	lw			$s3,0($s6)
+
+	and			$t9,$t3,$s3
+	srl			$t9,$t9,1
+
+	lw			$s3,4($s6)
+	and			$s2,$t3,$s3
+	sll			$s2,$s2,1
+	or			$t3,$t9,$s2
+				#         b = (((b & 0xcccccccc) >> 2) | ((b & 0x33333333) << 2));
+	lw			$s3,8($s6)
+	and			$t9,$t3,$s3
+	srl			$t9,$t9,2
+	lw			$s3,12($s6)
+
+	and			$s2,$t3,$s3
+	sll			$s2,$s2,2
+	or			$t3,$t9,$s2
+				#         b = (((b & 0xf0f0f0f0) >> 4) | ((b & 0x0f0f0f0f) << 4));
+
+	lw			$s3,16($s6)
+	and			$t9,$t3,$s3
+	srl			$t9,$t9,4
+	lw			$s3,20($s6)
+	and			$s2,$t3,$s3
+	sll			$s2,$s2,4
+	or			$t3,$t9,$s2
+				#         b = (((b & 0xff00ff00) >> 8) | ((b & 0x00ff00ff) << 8));
+	lw			$s3,24($s6)
+	and			$t9,$t3,$s3
+	srl			$t9,$t9,8
+	lw			$s3,28($s6)
+	and			$s2,$t3,$s3
+	sll			$s2,$s2,8
+	or			$t3,$t9,$s2
+				#         b = ((b >> 16) | (b << 16)) >> (32 - m);
+	srl			$t9,$t3,16
+	sll			$s0,$t3,16
+	
+	or			$t9,$t9,$s0
+
+	lw			$v1,m
+	neg			$v1,$v1
+	addi			$s1,$v1,32
+	srl			$t3,$t9,$s1
+	
+# bgaa:				#         if (b > a)
+				#         {
+	bgt			$t8,$t3,2f
+	beq			$t8,$t3,2f
+1:				#             //            Complex t = x[a];
+
+
+
+
+
+
+	li			$s7,16
+	mul			$s4,$s7,$t8
+	add			$s4,$t7,$s4
+	l.d			$f0,complex.real($s4)
+	l.d			$f2,complex.imaginary($s4)
+# 	s.d			$f0,t
+# 	l.d			$f2,t
+			#             //            x[a] = x[b];
+	li			$s7,16
+	mul			$s7,$s7,$t3
+	add			$s5,$t7,$s7	#s5 is x[b]
+	l.d			$f4,complex.real($s5)
+	l.d			$f6,complex.imaginary($s5)
+		#we do the swap in 4 instructions
+	s.d			$f4,complex.real($s4)	
+	s.d			$f6,complex.imaginary($s4)
+	s.d			$f0,complex.real($s5)	
+	s.d			$f2,complex.imaginary($s5)
+
+
+##################################################swap end
+				#         }
+2:
+
+	addi			$t8,1
+	j			Decimate	
+FinishDecimate:	
+		#     }
+			
+
+	li			$a0,'\n
+	syscall			$print_char
+# 	lw			$a0,Data
+# 	syscall			$print_int
+
+
+
+
+97:	
+
+
+
+
+END:
+# 	  jal			printalldata
+
+
+98:	
+
+	
+	lw	$ra,fp.ra($fp)	# restore registers from stacksese
+	lw	$s0,fp.s0($fp)
+	lw	$s1,fp.s1($fp)
+	lw	$s2,fp.s2($fp)
+	lw	$s3,fp.s3($fp)
+	lw	$s4,fp.s4($fp)
+	lw	$fp,fp.fp($fp)
+	add	$sp,$sp,fp.a4-fp.s4
+	jr	$ra
+
+
+
+complex.IFFT:	
+
+		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+		sw	$fp,fp.fp-fp.s4($sp)
+		add	$fp,$sp,fp.fp-fp.s4
+		sw	$ra,fp.ra($fp)
+		sw	$s0,fp.s0($fp)
+		sw	$s1,fp.s1($fp)
+		sw	$s2,fp.s2($fp)
+		sw	$s3,fp.s3($fp)
+		sw	$s4,fp.s4($fp)
+		sw	$a0,fp.a0($fp)
+		sw	$a1,fp.a1($fp)
+		sw	$a2,fp.a2($fp)
+		sw	$a3,fp.a3($fp)	
+#Save those vars
+
+		lw	$t0,N
+		lw	$t1,Data
+
+
+1:		beqz	$t0,FirstConj
+		l.d	$f12,complex.imaginary($t1)
+		mfc1	$t9,$f12
+		beqz	$t9,nextiter
+		neg.d	$f12,$f12
+		s.d	$f12,complex.imaginary($t1)
+		
+nextiter:	addi	$t0,-1
+		addi	$t1,16	#move the point ahead by 16 bytes next complex
+		j	1b
+
+FirstConj:
+		jal	complex.Cooley_Tukey_FFT	#forward FFT
+	
+		jal	printalldata #IIFTDEBUG
+	
+		lw	$t0,N
+		lw	$t1,Data
+
+1:		beqz	$t0,LastStep
+		l.d	$f12,complex.imaginary($t1)
+		mfc1	$t9,$f12
+		beqz	$t9,eqzero
+		neg.d	$f12,$f12
+		s.d	$f12,complex.imaginary($t1)
+		
+eqzero:		addi	$t0,-1
+		addi	$t1,16	#move the point ahead by 16 bytes next complex
+		j	1b
+
+
+LastStep:
+
+		lw	$t0,N
+		la	$t3,N
+		lw	$t1,Data
+# 		cvt.d.w	$t0,$f6
+		mtc1	$t0,$f6
+		cvt.d.w	$f6,$f6
+
+1:		beqz	$t0,98f
+		l.d	$f12,complex.real($t1)
+		div.d	$f10,$f12,$f6
+		mov.d	$f12,$f10
+		syscall	$print_double
+		s.d	$f10,complex.real($t1)
+		
+		addi	$t0,-1
+		addi	$t1,16	#move the point ahead by 16 bytes next complex
+		j	1b
+
+
+		jal	printalldata #IIFTDEBUGFFWe
+
+#load vars from caller
+98:	
+
+	
+	lw	$ra,fp.ra($fp)	# rrestore registers from stacksese
+	lw	$s0,fp.s0($fp)
+	lw	$s1,fp.s1($fp)
+	lw	$s2,fp.s2($fp)
+	lw	$s3,fp.s3($fp)
+	lw	$s4,fp.s4($fp)
+	lw	$fp,fp.fp($fp)
+	add	$sp,$sp,fp.a4-fp.s4
+	jr	$ra
+
+
+
+complex.phasor:
+		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+		sw	$fp,fp.fp-fp.s4($sp)
+		add	$fp,$sp,fp.fp-fp.s4
+		sw	$ra,fp.ra($fp)
+		sw	$s0,fp.s0($fp)
+		sw	$s1,fp.s1($fp)
+		sw	$s2,fp.s2($fp)
+		sw	$s3,fp.s3($fp)
+		sw	$s4,fp.s4($fp)
+		sw	$a0,fp.a0($fp)
+		sw	$a1,fp.a1($fp)
+		sw	$a2,fp.a2($fp)
+		sw	$a3,fp.a3($fp)	
+
+
+	#for this A = sqrt(real^2 + imag^2)
+	
+
+
+
+
+		lw	$ra,fp.ra($fp)	# rrestore registers from stacksese
+		lw	$s0,fp.s0($fp)
+		lw	$s1,fp.s1($fp)
+		lw	$s2,fp.s2($fp)
+		lw	$s3,fp.s3($fp)
+		lw	$s4,fp.s4($fp)
+		lw	$fp,fp.fp($fp)
+		add	$sp,$sp,fp.a4-fp.s4
+		jr	$ra

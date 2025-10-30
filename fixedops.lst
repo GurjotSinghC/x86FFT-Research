@@ -1,0 +1,385 @@
+    1          00000010	complex: 	.struct
+    2          00000000	real:		.double	0.0
+    3          00000008	imaginary:	.double	0.0
+    4                   
+    5                   # powerofTwo:	.double	2 cant remember what this is for
+    6 				.code
+    7                   complex.add:
+    8                   # complex:v0 complex::add(complex*arg1:a0,complex*arg2:a1)
+    9                   
+   10 00400000 23bd0000		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   11 00400004 afbe0000		sw	$fp,fp.fp-fp.s4($sp)
+   12 00400008 23be0000		add	$fp,$sp,fp.fp-fp.s4
+   13 0040000c afdf0000		sw	$ra,fp.ra($fp)
+   14 00400010 afd00000		sw	$s0,fp.s0($fp)
+   15 00400014 afd10000		sw	$s1,fp.s1($fp)
+   16 00400018 afd20000		sw	$s2,fp.s2($fp)
+   17 0040001c afd30000		sw	$s3,fp.s3($fp)
+   18 00400020 afd40000		sw	$s4,fp.s4($fp)
+   19 00400024 afc40000		sw	$a0,fp.a0($fp)
+   20 00400028 afc50000		sw	$a1,fp.a1($fp)
+   21 0040002c afc60000		sw	$a2,fp.a2($fp)
+   22 00400030 afc70000		sw	$a3,fp.a3($fp)
+   23 				l.d	$f12,complex.real($a0)
+   23 00400034 c48c0000		lwc1	$f12,complex.real($a0)
+   23 00400038 c48d0004		lwc1	$f12+1,complex.real+4($a0)
+   24                   #  	floor.d	$f12,$f12
+   25 				l.d	$f14,complex.imaginary($a0)
+   25 0040003c c48e0008		lwc1	$f14,complex.imaginary($a0)
+   25 00400040 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+   26                   # 	floor.d	$f14,$f14
+   27 				l.d	$f16,complex.real($a1)
+   27 00400044 c4b00000		lwc1	$f16,complex.real($a1)
+   27 00400048 c4b10004		lwc1	$f16+1,complex.real+4($a1)
+   28                   # 	floor.d	$f16,$f16
+   29 				l.d	$f18,complex.imaginary($a1)
+   29 0040004c c4b20008		lwc1	$f18,complex.imaginary($a1)
+   29 00400050 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+   30                   # 	floor.d	$f18,$f18
+   31 00400054 46306000		add.d	$f0,$f12,$f16
+   32 00400058 46327080		add.d	$f2,$f14,$f18
+   33 				s.d	$f0,complex.real($v0)
+   33 0040005c e4400000		swc1	$f0,complex.real($v0)
+   33 00400060 e4410004		swc1	$f0+1,complex.real+4($v0)
+   34 				s.d	$f2,complex.imaginary($v0)
+   34 00400064 e4420008		swc1	$f2,complex.imaginary($v0)
+   34 00400068 e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+   35                   
+   36 				li	$a0,'\n
+   36 0040006c 3404000a		ori	$a0,$0,0x0A
+   37 00400070 000002cc		syscall	$print_char
+   38                   
+   39                   
+   40                   	
+   41 00400074 8fdf0000	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+   42 00400078 8fd00000		lw	$s0,fp.s0($fp)
+   43 0040007c 8fd10000		lw	$s1,fp.s1($fp)
+   44 00400080 8fd20000		lw	$s2,fp.s2($fp)
+   45 00400084 8fd30000		lw	$s3,fp.s3($fp)
+   46 00400088 8fd40000		lw	$s4,fp.s4($fp)
+   47 0040008c 8fde0000		lw	$fp,fp.fp($fp)
+   48 00400090 23bd0000		add	$sp,$sp,fp.a4-fp.s4
+   49 00400094 03e00008		jr	$ra
+   50                   
+   51                   
+   52                   complex.mul:
+   53                   #complex:v0 complex::mul(complex * arg1:$a0,complex*arg2:a1)
+   54 00400098 23bd0000		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+   55 0040009c afbe0000		sw	$fp,fp.fp-fp.s4($sp)
+   56 004000a0 23be0000		add	$fp,$sp,fp.fp-fp.s4
+   57 004000a4 afdf0000		sw	$ra,fp.ra($fp)
+   58 004000a8 afd00000		sw	$s0,fp.s0($fp)
+   59 004000ac afd10000		sw	$s1,fp.s1($fp)
+   60 004000b0 afd20000		sw	$s2,fp.s2($fp)
+   61 004000b4 afd30000		sw	$s3,fp.s3($fp)
+   62 004000b8 afd40000		sw	$s4,fp.s4($fp)
+   63 004000bc afc40000		sw	$a0,fp.a0($fp)
+   64 004000c0 afc50000		sw	$a1,fp.a1($fp)
+   65 004000c4 afc60000		sw	$a2,fp.a2($fp)
+   66 004000c8 afc70000		sw	$a3,fp.a3($fp)
+   67                   
+   68                   
+   69 				l.d	$f12,complex.real($a0)
+   69 004000cc c48c0000		lwc1	$f12,complex.real($a0)
+   69 004000d0 c48d0004		lwc1	$f12+1,complex.real+4($a0)
+   70 				l.d	$f14,complex.imaginary($a0)
+   70 004000d4 c48e0008		lwc1	$f14,complex.imaginary($a0)
+   70 004000d8 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+   71 				l.d	$f16,complex.real($a1)
+   71 004000dc c4b00000		lwc1	$f16,complex.real($a1)
+   71 004000e0 c4b10004		lwc1	$f16+1,complex.real+4($a1)
+   72 				l.d	$f18,complex.imaginary($a1)
+   72 004000e4 c4b20008		lwc1	$f18,complex.imaginary($a1)
+   72 004000e8 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+   73                   
+   74                   
+   75                   	#f12 to f20
+   76 				l.d	$f10,roundingfacttor
+   76 004000ec 3c010000		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+   76 004000f0 c42a0000		lwc1	$f10,roundingfacttor&0xFFFF($at)
+   76 004000f4 c42b0000		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+   77 004000f8 46206506		mov.d	$f20,$f12
+   78 004000fc 4620a505		abs.d	$f20,$f20
+   79 00400100 462aa03e		c.le.d	$f20,$f10
+   80 00400104 45000003		bc1f	1f
+   81 00400108 44806800		mtc1	$0,$f13
+   82 0040010c 44806000		mtc1	$0,$f12
+   83 00400110 46806321		cvt.d.w	$f12,$f12
+   84                   
+   85                   1:
+   86 00400114 46207506		mov.d	$f20,$f14
+   87 00400118 4620a505		abs.d	$f20,$f20
+   88 0040011c 462aa03e		c.le.d	$f20,$f10
+   89 00400120 45000003		bc1f	2f
+   90 00400124 44807000		mtc1	$0,$f14
+   91 00400128 44807800		mtc1	$0,$f15
+   92 0040012c 468073a1		cvt.d.w	$f14,$f14
+   93                   
+   94                   2:	
+   95                   
+   96                   
+   97                   
+   98 00400130 46208506		mov.d	$f20,$f16
+   99 00400134 4620a505		abs.d	$f20,$f20
+  100 00400138 462aa03e		c.le.d	$f20,$f10
+  101 0040013c 45000003		bc1f	3f
+  102 00400140 44808000		mtc1	$0,$f16
+  103 00400144 44808800		mtc1	$0,$f17
+  104 00400148 46808421		cvt.d.w	$f16,$f16
+  105                   3:
+  106 0040014c 46209506		mov.d	$f20,$f18
+  107 00400150 4620a505		abs.d	$f20,$f20
+  108 00400154 462aa03e		c.le.d	$f20,$f10
+  109 00400158 45000003		bc1f	4f
+  110 0040015c 44809000		mtc1	$0,$f18
+  111 00400160 44809800		mtc1	$0,$f19
+  112 00400164 468094a1		cvt.d.w	$f18,$f18
+  113                   	
+  114                   	
+  115                   4:
+  116                   
+  117                   
+  118                   
+  119                   
+  120                   
+  121                   
+  122                   
+  123                   
+  124                   
+  125                   	#imaginary times imagery 
+  126 00400168 46306002		mul.d	$f0,$f12,$f16 			#real and real
+  127 0040016c 46327082		mul.d	$f2,$f14,$f18 		       	#imagine and maignary
+  128 00400170 46220001		sub.d	$f0,$f0,$f2 			#i*i is -1
+  129                   	
+  130 00400174 46307082		mul.d	$f2,$f14,$f16
+  131 00400178 46326102		mul.d	$f4,$f12,$f18
+  132 0040017c 46241080		add.d	$f2,$f2,$f4
+  133                   
+  134 				s.d	$f0,complex.real($v0)
+  134 00400180 e4400000		swc1	$f0,complex.real($v0)
+  134 00400184 e4410004		swc1	$f0+1,complex.real+4($v0)
+  135                   
+  136 				s.d	$f2,complex.imaginary($v0)
+  136 00400188 e4420008		swc1	$f2,complex.imaginary($v0)
+  136 0040018c e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  137 00400190 8fdf0000	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  138 00400194 8fd00000		lw	$s0,fp.s0($fp)
+  139 00400198 8fd10000		lw	$s1,fp.s1($fp)
+  140 0040019c 8fd20000		lw	$s2,fp.s2($fp)
+  141 004001a0 8fd30000		lw	$s3,fp.s3($fp)
+  142 004001a4 8fd40000		lw	$s4,fp.s4($fp)
+  143 004001a8 8fde0000		lw	$fp,fp.fp($fp)
+  144 004001ac 23bd0000		add	$sp,$sp,fp.a4-fp.s4
+  145 004001b0 03e00008		jr	$ra
+  146                   
+  147                   
+  148                   complex.sub:
+  149                   # complex:v0 complex::sub(complex*arg1:a0,complex*arg2:a1)
+  150                   
+  151 004001b4 23bd0000		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  152 004001b8 afbe0000		sw	$fp,fp.fp-fp.s4($sp)
+  153 004001bc 23be0000		add	$fp,$sp,fp.fp-fp.s4
+  154 004001c0 afdf0000		sw	$ra,fp.ra($fp)
+  155 004001c4 afd00000		sw	$s0,fp.s0($fp)
+  156 004001c8 afd10000		sw	$s1,fp.s1($fp)
+  157 004001cc afd20000		sw	$s2,fp.s2($fp)
+  158 004001d0 afd30000		sw	$s3,fp.s3($fp)
+  159 004001d4 afd40000		sw	$s4,fp.s4($fp)
+  160 004001d8 afc40000		sw	$a0,fp.a0($fp)
+  161 004001dc afc50000		sw	$a1,fp.a1($fp)
+  162 004001e0 afc60000		sw	$a2,fp.a2($fp)
+  163 004001e4 afc70000		sw	$a3,fp.a3($fp)
+  164 				l.d	$f12,complex.real($a0)
+  164 004001e8 c48c0000		lwc1	$f12,complex.real($a0)
+  164 004001ec c48d0004		lwc1	$f12+1,complex.real+4($a0)
+  165                   #  	floor.d	$f12,$f12
+  166 				l.d	$f14,complex.imaginary($a0)
+  166 004001f0 c48e0008		lwc1	$f14,complex.imaginary($a0)
+  166 004001f4 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+  167                   #  	floor.d	$f14,$f14
+  168 				l.d	$f16,complex.real($a1)
+  168 004001f8 c4b00000		lwc1	$f16,complex.real($a1)
+  168 004001fc c4b10004		lwc1	$f16+1,complex.real+4($a1)
+  169                   #  	floor.d	$f16,$f16
+  170 				l.d	$f18,complex.imaginary($a1)
+  170 00400200 c4b20008		lwc1	$f18,complex.imaginary($a1)
+  170 00400204 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+  171                   # 	floor.d	$f18,$f18
+  172                   
+  173                   	#f12 to f20
+  174 				l.d	$f10,roundingfacttor
+  174 00400208 3c010000		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+  174 0040020c c42a0000		lwc1	$f10,roundingfacttor&0xFFFF($at)
+  174 00400210 c42b0000		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+  175 00400214 46206506		mov.d	$f20,$f12
+  176 00400218 4620a505		abs.d	$f20,$f20
+  177 0040021c 462aa03e		c.le.d	$f20,$f10
+  178 00400220 45000003		bc1f	1f
+  179 00400224 44806800		mtc1	$0,$f13
+  180 00400228 44806000		mtc1	$0,$f12
+  181 0040022c 46806321		cvt.d.w	$f12,$f12
+  182                   
+  183                   1:
+  184 00400230 46207506		mov.d	$f20,$f14
+  185 00400234 4620a505		abs.d	$f20,$f20
+  186 00400238 462aa03e		c.le.d	$f20,$f10
+  187 0040023c 45000003		bc1f	2f
+  188 00400240 44807000		mtc1	$0,$f14
+  189 00400244 44807800		mtc1	$0,$f15
+  190 00400248 468073a1		cvt.d.w	$f14,$f14
+  191                   
+  192                   2:	
+  193                   
+  194                   
+  195                   
+  196 0040024c 46208506		mov.d	$f20,$f16
+  197 00400250 4620a505		abs.d	$f20,$f20
+  198 00400254 462aa03e		c.le.d	$f20,$f10
+  199 00400258 45000003		bc1f	3f
+  200 0040025c 44808000		mtc1	$0,$f16
+  201 00400260 44808800		mtc1	$0,$f17
+  202 00400264 46808421		cvt.d.w	$f16,$f16
+  203                   3:
+  204 00400268 46209506		mov.d	$f20,$f18
+  205 0040026c 4620a505		abs.d	$f20,$f20
+  206 00400270 462aa03e		c.le.d	$f20,$f10
+  207 00400274 45000003		bc1f	4f
+  208 00400278 44809000		mtc1	$0,$f18
+  209 0040027c 44809800		mtc1	$0,$f19
+  210 00400280 468094a1		cvt.d.w	$f18,$f18
+  211                   	
+  212                   	
+  213                   4:
+  214                   
+  215                   
+  216                   
+  217                   
+  218                   
+  219 00400284 46306001		sub.d	$f0,$f12,$f16
+  220 00400288 46327081		sub.d	$f2,$f14,$f18
+  221 				s.d	$f0,complex.real($v0)
+  221 0040028c e4400000		swc1	$f0,complex.real($v0)
+  221 00400290 e4410004		swc1	$f0+1,complex.real+4($v0)
+  222 				s.d	$f2,complex.imaginary($v0)
+  222 00400294 e4420008		swc1	$f2,complex.imaginary($v0)
+  222 00400298 e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  223 0040029c 8fdf0000	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  224 004002a0 8fd00000		lw	$s0,fp.s0($fp)
+  225 004002a4 8fd10000		lw	$s1,fp.s1($fp)
+  226 004002a8 8fd20000		lw	$s2,fp.s2($fp)
+  227 004002ac 8fd30000		lw	$s3,fp.s3($fp)
+  228 004002b0 8fd40000		lw	$s4,fp.s4($fp)
+  229 004002b4 8fde0000		lw	$fp,fp.fp($fp)
+  230 004002b8 23bd0000		add	$sp,$sp,fp.a4-fp.s4
+  231 004002bc 03e00008		jr	$ra
+  232                   
+  233                   complex.div:
+  234                   #complex:v0 complex::div(complex*arg1:a0,complex*arg2:a1)
+  235 004002c0 23bd0000		addi	$sp,$sp,fp.s4-fp.a4	# standard stack frame
+  236 004002c4 afbe0000		sw	$fp,fp.fp-fp.s4($sp)
+  237 004002c8 23be0000		add	$fp,$sp,fp.fp-fp.s4
+  238 004002cc afdf0000		sw	$ra,fp.ra($fp)
+  239 004002d0 afd00000		sw	$s0,fp.s0($fp)
+  240 004002d4 afd10000		sw	$s1,fp.s1($fp)
+  241 004002d8 afd20000		sw	$s2,fp.s2($fp)
+  242 004002dc afd30000		sw	$s3,fp.s3($fp)
+  243 004002e0 afd40000		sw	$s4,fp.s4($fp)
+  244 004002e4 afc40000		sw	$a0,fp.a0($fp)
+  245 004002e8 afc50000		sw	$a1,fp.a1($fp)
+  246 004002ec afc60000		sw	$a2,fp.a2($fp)
+  247 004002f0 afc70000		sw	$a3,fp.a3($fp)
+  248 				l.d	$f12,complex.real($a0)
+  248 004002f4 c48c0000		lwc1	$f12,complex.real($a0)
+  248 004002f8 c48d0004		lwc1	$f12+1,complex.real+4($a0)
+  249 				l.d	$f14,complex.imaginary($a0)
+  249 004002fc c48e0008		lwc1	$f14,complex.imaginary($a0)
+  249 00400300 c48f000c		lwc1	$f14+1,complex.imaginary+4($a0)
+  250 				l.d	$f16,complex.real($a1)
+  250 00400304 c4b00000		lwc1	$f16,complex.real($a1)
+  250 00400308 c4b10004		lwc1	$f16+1,complex.real+4($a1)
+  251 				l.d	$f18,complex.imaginary($a1)
+  251 0040030c c4b20008		lwc1	$f18,complex.imaginary($a1)
+  251 00400310 c4b3000c		lwc1	$f18+1,complex.imaginary+4($a1)
+  252                   
+  253                   		#f12 to f20
+  254 				l.d	$f10,roundingfacttor
+  254 00400314 3c010000		lui	$at,roundingfacttor&0x8000<<1+roundingfacttor>>16
+  254 00400318 c42a0000		lwc1	$f10,roundingfacttor&0xFFFF($at)
+  254 0040031c c42b0000		lwc1	$f10+1,roundingfacttor&0xFFFF+4($at)
+  255 00400320 46206506		mov.d	$f20,$f12
+  256 00400324 4620a505		abs.d	$f20,$f20
+  257 00400328 462aa03e		c.le.d	$f20,$f10
+  258 0040032c 45000003		bc1f	1f
+  259 00400330 44806800		mtc1	$0,$f13
+  260 00400334 44806000		mtc1	$0,$f12
+  261 00400338 46806321		cvt.d.w	$f12,$f12
+  262                   
+  263                   1:
+  264 0040033c 46207506		mov.d	$f20,$f14
+  265 00400340 4620a505		abs.d	$f20,$f20
+  266 00400344 462aa03e		c.le.d	$f20,$f10
+  267 00400348 45000003		bc1f	2f
+  268 0040034c 44807000		mtc1	$0,$f14
+  269 00400350 44807800		mtc1	$0,$f15
+  270 00400354 468073a1		cvt.d.w	$f14,$f14
+  271                   
+  272                   2:	
+  273                   
+  274                   
+  275                   
+  276 00400358 46208506		mov.d	$f20,$f16
+  277 0040035c 4620a505		abs.d	$f20,$f20
+  278 00400360 462aa03e		c.le.d	$f20,$f10
+  279 00400364 45000003		bc1f	3f
+  280 00400368 44808000		mtc1	$0,$f16
+  281 0040036c 44808800		mtc1	$0,$f17
+  282 00400370 46808421		cvt.d.w	$f16,$f16
+  283                   3:
+  284 00400374 46209506		mov.d	$f20,$f18
+  285 00400378 4620a505		abs.d	$f20,$f20
+  286 0040037c 462aa03e		c.le.d	$f20,$f10
+  287 00400380 45000003		bc1f	4f
+  288 00400384 44809000		mtc1	$0,$f18
+  289 00400388 44809800		mtc1	$0,$f19
+  290 0040038c 468094a1		cvt.d.w	$f18,$f18
+  291                   	
+  292                   	
+  293                   4:
+  294                   
+  295                   
+  296                   
+  297                   
+  298                   
+  299                   
+  300                   
+  301                   
+  302                   
+  303                   
+  304                   
+  305 00400390 46306002		mul.d	$f0,$f12,$f16 	# a*c
+  306 00400394 46327082		mul.d	$f2,$f14,$f18 	# b*d
+  307 00400398 46220000		add.d	$f0,$f0,$f2 	# ac + bd
+  308 0040039c 46307082		mul.d	$f2,$f14,$f16	# bc
+  309 004003a0 46326102		mul.d	$f4,$f12,$f18	# ad
+  310 004003a4 46241081		sub.d	$f2,$f2,$f4	# bc-ad
+  311 004003a8 46308102		mul.d	$f4,$f16,$f16	#c²
+  312 004003ac 46329202		mul.d	$f8,$f18,$f18	#d²
+  313 004003b0 46282100		add.d	$f4,$f4,$f8	#c²+d²
+  314 004003b4 46240003		div.d	$f0,$f0,$f4	# whole real term
+  315 004003b8 46241083		div.d	$f2,$f2,$f4	# whole imaginary term
+  316 				s.d	$f0,complex.real($v0)
+  316 004003bc e4400000		swc1	$f0,complex.real($v0)
+  316 004003c0 e4410004		swc1	$f0+1,complex.real+4($v0)
+  317 				s.d	$f2,complex.imaginary($v0)
+  317 004003c4 e4420008		swc1	$f2,complex.imaginary($v0)
+  317 004003c8 e443000c		swc1	$f2+1,complex.imaginary+4($v0)
+  318 004003cc 8fdf0000	98:	lw	$ra,fp.ra($fp)	# restore registers from stack
+  319 004003d0 8fd00000		lw	$s0,fp.s0($fp)
+  320 004003d4 8fd10000		lw	$s1,fp.s1($fp)
+  321 004003d8 8fd20000		lw	$s2,fp.s2($fp)
+  322 004003dc 8fd30000		lw	$s3,fp.s3($fp)
+  323 004003e0 8fd40000		lw	$s4,fp.s4($fp)
+  324 004003e4 8fde0000		lw	$fp,fp.fp($fp)
+  325 004003e8 23bd0000		add	$sp,$sp,fp.a4-fp.s4
+  326 004003ec 03e00008		jr	$ra
+			
